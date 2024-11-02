@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Keyboard armmel.keyboard:horizontalGap="1.25%p" armmel.keyboard:keyHeight="@dimen/key_height" armmel.keyboard:keyWidth="18.5%p" armmel.keyboard:verticalGap="1%p"
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:armmel.keyboard="http://schemas.android.com/apk/res-auto">
+    <Row>
+        <Key armmel.keyboard:codes="48,-99,230,231,248" armmel.keyboard:keyEdgeFlags="left" armmel.keyboard:keyLabel="0030,0020,00E6,00E7,00F8" />
+        <Key armmel.keyboard:codes="49,36,37,35,55" armmel.keyboard:keyLabel="0031,0024,0025,0023,0037" />
+        <Key armmel.keyboard:codes="50,60,40,62,56" armmel.keyboard:keyLabel="0032,003C,0028,003E,0038" />
+        <Key armmel.keyboard:codes="51,91,41,93,57" armmel.keyboard:keyLabel="0033,005B,0029,005D,0039" />
+        <Key armmel.keyboard:codes="-5" armmel.keyboard:isRepeatable="true" armmel.keyboard:keyEdgeFlags="right" armmel.keyboard:keyLabel="232B" />
+    </Row>
+    <Row>
+        <Key armmel.keyboard:codes="45,-99,92,58,-125" armmel.keyboard:keyEdgeFlags="left" armmel.keyboard:keyLabel="002D,0020,005C,005C,003A,0115" />
+        <Key armmel.keyboard:codes="52,123,124,125,95" armmel.keyboard:keyLabel="0034,007B,007C,007D,005F" />
+        <Key armmel.keyboard:codes="53,94,96,126,339" armmel.keyboard:keyLabel="0035,005E,0060,007E,0153" />
+        <Key armmel.keyboard:codes="54,223,181,240,254" armmel.keyboard:keyLabel="0036,00DF,00B5,00F0,00FE" />
+        <Key armmel.keyboard:codes="46,176,177,-99,44" armmel.keyboard:keyEdgeFlags="right" armmel.keyboard:keyLabel="002E,00B0,00B1,0020,002C" />
+    </Row>
+    <Row armmel.keyboard:rowEdgeFlags="bottom" armmel.keyboard:keyHeight="30dp">
+        <Key armmel.keyboard:codes="-1" armmel.keyboard:keyLabel="21E7" 
+                armmel.keyboard:keyWidth="14%p" armmel.keyboard:isModifier="true"
+                armmel.keyboard:isSticky="true" armmel.keyboard:keyEdgeFlags="left"/>
+        <Key armmel.keyboard:codes="-2" armmel.keyboard:keyLabel="0031" armmel.keyboard:keyWidth="14%p"
+                armmel.keyboard:isSticky="true" />
+        <Key armmel.keyboard:codes="32" armmel.keyboard:keyLabel="2423" 
+                armmel.keyboard:keyWidth="27%p" armmel.keyboard:isRepeatable="true"/>
+        <Key armmel.keyboard:codes="10" armmel.keyboard:keyLabel="23CE" 
+            armmel.keyboard:keyWidth="22%p" />
+        <Key armmel.keyboard:codes="-7" armmel.keyboard:isSticky="true" armmel.keyboard:keyEdgeFlags="right" armmel.keyboard:keyLabel="004A" armmel.keyboard:keyWidth="14%p" />
+    </Row>
+</Keyboard>

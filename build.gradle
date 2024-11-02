@@ -1,0 +1,16 @@
+buildscript { 
+	repositories {
+			mavenCentral()	
+			google()
+
+	} 
+	dependencies {
+            classpath 'com.android.tools.build:gradle:4.2.+' 
+	} 
+}
+
+
+/** Task to generate a gradle wrapper. */ 
+/*task wrapper(type: Wrapper) { 
+	gradleVersion = '5.0' 
+}*/

@@ -1,0 +1,61 @@
+buildscript { 
+	repositories { 
+			mavenCentral()	
+			 google()
+
+	} 
+	
+	dependencies 
+	{ 
+		classpath 'com.android.tools.build:gradle:4.2.+' 
+	} 
+} 
+
+apply plugin: 'android'
+
+dependencies { 
+	repositories { 
+		     mavenCentral()	
+			google()
+	}
+
+	implementation fileTree(dir: 'libs', include: '*.jar')
+
+}
+
+/*Gets the version name from the latest Git tag */ 
+
+android { 
+	namespace 'armmel.keyboard'
+        defaultConfig { 
+		versionCode 20 
+		versionName 'Arm Keyboard'
+		minSdkVersion 28
+		targetSdkVersion 29
+
+	}
+
+  compileSdkVersion 'android-29'
+	compileOptions {
+        sourceCompatibility 1.8
+        targetCompatibility 1.8
+    }
+  signingConfigs {
+      release {
+        storeFile file("")
+          storePassword ""
+          keyAlias ""
+          keyPassword ""
+      }
+  }
+
+  buildTypes {
+	  debug {
+		zipAlignEnabled true
+	  }
+      release {
+          signingConfig signingConfigs.release
+      }
+  }
+
+}
