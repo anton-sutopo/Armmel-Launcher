@@ -13,7 +13,7 @@
         <Key armmel.keyboard:codes="43402,-99,43466,43393,43467" armmel.keyboard:keyEdgeFlags="left" armmel.keyboard:keyLabel="A98A,0020,A9CA,A981,A9CB" />
         <Key armmel.keyboard:codes="43435,43438,43404,43434,43425" armmel.keyboard:keyLabel="A9AB,A9AE,A98C,A9AA,A9A1" />
         <Key armmel.keyboard:codes="43407,43437,43406,43418,43412" armmel.keyboard:keyLabel="A98F,A9AD,A98E,A99A,A994" />
-        <Key armmel.keyboard:codes="43450,43444,43446,43394,43448" armmel.keyboard:keyLabel="A9BA,A9B4,A9B6,A98A,A9B8" />
+        <Key armmel.keyboard:codes="43450,43444,43446,43394,43448" armmel.keyboard:keyLabel="A9BA,A9B4,A9B6,A982,A9B8" />
         <Key armmel.keyboard:codes="43452,43395,43464,-99,43465" armmel.keyboard:keyEdgeFlags="right" armmel.keyboard:keyLabel="A9BC,A983,A9C8,0020,A9C9" />
     </Row>
     <Row armmel.keyboard:rowEdgeFlags="bottom"  armmel.keyboard:keyHeight="30dp">
