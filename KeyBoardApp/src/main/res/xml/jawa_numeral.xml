@@ -4,9 +4,9 @@
   xmlns:armmel.keyboard="http://schemas.android.com/apk/res-auto">
     <Row>
         <Key armmel.keyboard:codes="43472,-99,-99,-99,-99" armmel.keyboard:keyEdgeFlags="left" armmel.keyboard:keyLabel="A9D0,0020,0020,0020,0020" />
-        <Key armmel.keyboard:codes="43473,-99,-99,-99,43479" armmel.keyboard:keyLabel="A9D1,0020,0020,0020,49D7" />
-        <Key armmel.keyboard:codes="43474,-99,-99,-99,43480" armmel.keyboard:keyLabel="A9D2,0020,0020,0020,49D8" />
-        <Key armmel.keyboard:codes="43475,-99,-99,-99,43481" armmel.keyboard:keyLabel="A9D3,0020,0020,0020,49D9" />
+        <Key armmel.keyboard:codes="43473,-99,-99,-99,43479" armmel.keyboard:keyLabel="A9D1,0020,0020,0020,A9D7" />
+        <Key armmel.keyboard:codes="43474,-99,-99,-99,43480" armmel.keyboard:keyLabel="A9D2,0020,0020,0020,A9D8" />
+        <Key armmel.keyboard:codes="43475,-99,-99,-99,43481" armmel.keyboard:keyLabel="A9D3,0020,0020,0020,A9D9" />
         <Key armmel.keyboard:codes="-5" armmel.keyboard:isRepeatable="true" armmel.keyboard:keyEdgeFlags="right" armmel.keyboard:keyLabel="232B" />
     </Row>
     <Row>
@@ -20,7 +20,7 @@
         <Key armmel.keyboard:codes="-1" armmel.keyboard:keyLabel="21E7" 
                 armmel.keyboard:keyWidth="14%p" armmel.keyboard:isModifier="true"
                 armmel.keyboard:isSticky="true" armmel.keyboard:keyEdgeFlags="left"/>
-        <Key armmel.keyboard:codes="-2" armmel.keyboard:keyLabel="1" armmel.keyboard:keyWidth="14%p"
+        <Key armmel.keyboard:codes="-2" armmel.keyboard:keyLabel="0031" armmel.keyboard:keyWidth="14%p"
                 armmel.keyboard:isSticky="true" />
         <Key armmel.keyboard:codes="43456" armmel.keyboard:keyLabel="A9C0" 
                 armmel.keyboard:keyWidth="27%p" armmel.keyboard:isRepeatable="true"/>

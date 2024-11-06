@@ -20,7 +20,7 @@
         <Key armmel.keyboard:codes="-1" armmel.keyboard:keyLabel="21E7" 
                 armmel.keyboard:keyWidth="14%p" armmel.keyboard:isModifier="true"
                 armmel.keyboard:isSticky="true" armmel.keyboard:keyEdgeFlags="left"/>
-        <Key armmel.keyboard:codes="-2" armmel.keyboard:keyLabel="1" armmel.keyboard:keyWidth="14%p"
+        <Key armmel.keyboard:codes="-2" armmel.keyboard:keyLabel="0031" armmel.keyboard:keyWidth="14%p"
                 armmel.keyboard:isSticky="true" />
         <Key armmel.keyboard:codes="43456" armmel.keyboard:keyLabel="A9C0" 
                 armmel.keyboard:keyWidth="27%p" armmel.keyboard:isRepeatable="true"/>
