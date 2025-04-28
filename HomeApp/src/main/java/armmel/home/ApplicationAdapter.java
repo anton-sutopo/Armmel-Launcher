@@ -60,7 +60,7 @@ public class ApplicationAdapter extends ArrayAdapter<ApplicationInfo> {
             final CustomImageView iv = (CustomImageView) convertView.findViewById(R.id.icon_image);
             iv.setImage(icon);
         }
-        final TextView textView = (TextView) convertView.findViewById(R.id.icon_text);
+        final OutlineTextView textView = (OutlineTextView) convertView.findViewById(R.id.icon_text);
         textView.setText(info.title);
         return convertView;
     }

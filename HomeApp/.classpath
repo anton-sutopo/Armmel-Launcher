@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src/main/java"/>
+	<classpathentry kind="lib" path="/home/sutopo/android/build-tools/30.0.2/core-lambda-stubs.jar"/>
+	<classpathentry kind="lib" path="/home/sutopo/android/platforms/android-29/android.jar"/>
+	<classpathentry kind="lib" path="/home/sutopo/project/Home/HomeApp/build/intermediates/app_classes/debug/classes.jar"/>
+	<classpathentry kind="lib" path="/home/sutopo/project/Home/HomeApp/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/debug/R.jar"/>
+	<classpathentry kind="lib" path="/home/sutopo/project/Home/HomeApp/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/debugAndroidTest/R.jar"/>
+	<classpathentry kind="lib" path="/home/sutopo/project/Home/HomeApp/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/release/R.jar"/>
+	<classpathentry kind="lib" path="/home/sutopo/project/Home/HomeApp/build/intermediates/javac/debug/classes"/>
+	<classpathentry kind="lib" path="/home/sutopo/project/Home/HomeApp/build/intermediates/javac/debugAndroidTest/classes"/>
+	<classpathentry kind="lib" path="/home/sutopo/project/Home/HomeApp/build/intermediates/javac/release/classes"/>
+	<classpathentry kind="lib" path="."/>
+</classpath>

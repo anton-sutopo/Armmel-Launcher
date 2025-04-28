@@ -16,7 +16,7 @@
         <Key armmel.keyboard:codes="-99,-99,-99,-99,-99" armmel.keyboard:keyLabel="0020,0020,0020,0020,0020" />
         <Key armmel.keyboard:codes="-99,-99,-99,-99,-99" armmel.keyboard:keyEdgeFlags="right" armmel.keyboard:keyLabel="0020,0020,0020,0020,0020" />
     </Row>
-    <Row armmel.keyboard:rowEdgeFlags="bottom"  armmel.keyboard:keyHeight="30dp">
+    <Row armmel.keyboard:rowEdgeFlags="bottom"  armmel.keyboard:keyHeight="40dp">
         <Key armmel.keyboard:codes="-1" armmel.keyboard:keyLabel="21E7" 
                 armmel.keyboard:keyWidth="14%p" armmel.keyboard:isModifier="true"
                 armmel.keyboard:isSticky="true" armmel.keyboard:keyEdgeFlags="left"/>

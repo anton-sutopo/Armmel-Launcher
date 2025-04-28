@@ -41,9 +41,9 @@ public class Utils {
 
         return p1;
     }
-    public static boolean writeProperties(Context c, Properties p, String fileName) {
+    public static boolean writeProperties(Context c, Properties p, String fileName,String comment) {
         try {
-            p.store(new FileOutputStream(getRoot(c)+File.separator+fileName),null);
+            p.store(new FileOutputStream(getRoot(c)+File.separator+fileName),comment);
         } catch(Exception e) {
             e.printStackTrace(); 
         }

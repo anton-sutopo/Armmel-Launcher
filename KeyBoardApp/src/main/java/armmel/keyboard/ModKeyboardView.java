@@ -268,8 +268,9 @@ public class ModKeyboardView extends View implements View.OnClickListener {
                 key.x + key.width + getPaddingLeft(), key.y + key.height + getPaddingTop());
         if (mCanvas != null)
             drawOneKey(mCanvas, keyIndex);
-        invalidate(key.x + getPaddingLeft(), key.y + getPaddingTop(),
-                key.x + key.width + getPaddingLeft(), key.y + key.height + getPaddingTop());
+        //invalidate(key.x + getPaddingLeft(), key.y + getPaddingTop(),
+        //        key.x + key.width + getPaddingLeft(), key.y + key.height + getPaddingTop());
+        invalidate();
     }
 
     @Override
@@ -303,7 +304,8 @@ public class ModKeyboardView extends View implements View.OnClickListener {
         }
         final Canvas canvas = mCanvas;
         mDirtyRect.union(0, 0, getWidth(), getHeight());
-        canvas.clipRect(mDirtyRect, Op.INTERSECT);
+        canvas.save();
+        canvas.clipRect(mDirtyRect);
 
         canvas.drawColor(0x00000000, PorterDuff.Mode.CLEAR);
         Drawable bg = getResources().getDrawable(R.drawable.keyboard_background,context.getTheme());
@@ -313,18 +315,14 @@ public class ModKeyboardView extends View implements View.OnClickListener {
         for (int i = 0; i < mKeys.length; i++) {
             drawOneKey(canvas, i);
         }
-
+        canvas.restore();
         mDrawPending = false;
         mDirtyRect.setEmpty();
     }
     public static int dpToPx(float dp, Resources res) {
         return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, res.getDisplayMetrics());
     }
-    private int getTextHeight(String s, Paint p) {
-        Rect bounds = new Rect();
-        p.getTextBounds(s, 0, s.length(), bounds);
-        return bounds.height(); 
-    }
+
     private String[] getLabelArray(String labeles) {
         String[] labels = labeles.split(",");
         String[] retlabels = new String[labels.length];
