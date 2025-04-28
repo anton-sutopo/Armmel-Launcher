@@ -42,10 +42,10 @@ android {
     }
   signingConfigs {
       release {
-        storeFile file("")
-          storePassword ""
-          keyAlias ""
-          keyPassword ""
+        storeFile file("/home/sutopo/project/arm-release.keystore")
+          storePassword "12345678"
+          keyAlias "armkey"
+          keyPassword "12345678"
       }
   }
 

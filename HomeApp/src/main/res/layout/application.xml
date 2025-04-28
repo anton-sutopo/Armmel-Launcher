@@ -22,22 +22,25 @@ limitations under the License.
     android:padding="5dp"
     android:background="@drawable/list_selector"
     >
-<TextView
+<armmel.home.OutlineTextView
     android:id="@+id/icon_text"
     android:layout_width="match_parent"
-    android:layout_height="28dp"
+    android:layout_height="30dp"
     android:gravity="center"
     android:textAlignment="center" 
     android:text=""
     android:textSize="12sp"
     android:shadowColor="#000000"
     android:singleLine="false"
+    android:shadowRadius="5"
+    android:shadowDy="2"
+    android:shadowDx="2"
     android:lines ="2"
     android:maxLines="2"
     android:textColor="#ffffff"
     android:layout_alignParentBottom="true"
     >
-    </TextView>
+    </armmel.home.OutlineTextView>
     <armmel.home.CustomImageView
         android:id="@+id/icon_image"
         android:layout_width="match_parent"

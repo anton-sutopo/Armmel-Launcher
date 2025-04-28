@@ -162,7 +162,7 @@ public class Keyboard {
     private List<Keyboard.Key> mKeys;
 
     /**
-     * List of modifier keys such as Shift & Alt, if any
+     * List of modifier keys such as Shift and Alt, if any
      */
     private List<Keyboard.Key> mModifierKeys;
 
@@ -723,8 +723,21 @@ public class Keyboard {
 
     final void resize(int newWidth, int newHeight) {
         int numRows = rows.size();
+        int totalHeight = 0;
+        int totalVGap = 0;
+        float scaleFactorV = 1;
         for (int rowIndex = 0; rowIndex < numRows; ++rowIndex) {
             Keyboard.Row row = rows.get(rowIndex);
+            totalVGap += row.verticalGap;
+            totalHeight += row.defaultHeight;
+        }   
+        if(totalHeight+totalVGap > newHeight) {
+             scaleFactorV = (float) (newHeight - totalVGap) / totalHeight;
+        
+        }
+        for (int rowIndex = 0; rowIndex < numRows; ++rowIndex) {
+            Keyboard.Row row = rows.get(rowIndex);
+         
             int numKeys = row.mKeys.size();
             int totalGap = 0;
             int totalWidth = 0;
@@ -741,15 +754,14 @@ public class Keyboard {
                 for (int keyIndex = 0; keyIndex < numKeys; ++keyIndex) {
                     Keyboard.Key key = row.mKeys.get(keyIndex);
                     key.width *= scaleFactor;
+                    key.height *= scaleFactorV; 
                     key.x = x;
                     x += key.width + key.gap;
                 }
             }
         }
         mTotalWidth = newWidth;
-        // TODO: This does not adjust the vertical placement according to the new size.
-        // The main problem in the previous code was horizontal placement/size, but we should
-        // also recalculate the vertical sizes/positions when we get this resize call.
+        mTotalHeight = newHeight;
     }
 
     public List<Keyboard.Key> getKeys() {

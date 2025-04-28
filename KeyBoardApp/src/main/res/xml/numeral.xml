@@ -10,13 +10,13 @@
         <Key armmel.keyboard:codes="-5" armmel.keyboard:isRepeatable="true" armmel.keyboard:keyEdgeFlags="right" armmel.keyboard:keyLabel="232B" />
     </Row>
     <Row>
-        <Key armmel.keyboard:codes="45,-99,92,58,-125" armmel.keyboard:keyEdgeFlags="left" armmel.keyboard:keyLabel="002D,0020,005C,005C,003A,0115" />
+        <Key armmel.keyboard:codes="45,-99,92,58,47" armmel.keyboard:keyEdgeFlags="left" armmel.keyboard:keyLabel="002D,0020,005C,003A,002F" />
         <Key armmel.keyboard:codes="52,123,124,125,95" armmel.keyboard:keyLabel="0034,007B,007C,007D,005F" />
         <Key armmel.keyboard:codes="53,94,96,126,339" armmel.keyboard:keyLabel="0035,005E,0060,007E,0153" />
         <Key armmel.keyboard:codes="54,223,181,240,254" armmel.keyboard:keyLabel="0036,00DF,00B5,00F0,00FE" />
         <Key armmel.keyboard:codes="46,176,177,-99,44" armmel.keyboard:keyEdgeFlags="right" armmel.keyboard:keyLabel="002E,00B0,00B1,0020,002C" />
     </Row>
-    <Row armmel.keyboard:rowEdgeFlags="bottom" armmel.keyboard:keyHeight="30dp">
+    <Row armmel.keyboard:rowEdgeFlags="bottom" armmel.keyboard:keyHeight="40dp">
         <Key armmel.keyboard:codes="-1" armmel.keyboard:keyLabel="21E7" 
                 armmel.keyboard:keyWidth="14%p" armmel.keyboard:isModifier="true"
                 armmel.keyboard:isSticky="true" armmel.keyboard:keyEdgeFlags="left"/>

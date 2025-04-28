@@ -22,7 +22,8 @@ import android.graphics.Bitmap;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
-
+import android.content.pm.ShortcutInfo;
+import java.util.ArrayList;
 /**
  * Represents a launchable application. An application is made of a name (or
  * title), an intent and an icon.
@@ -50,9 +51,13 @@ class ApplicationInfo {
     boolean isSystem = false;
     boolean isShowAll = false;
     boolean isReload = false;
+    private boolean isShortcut = false;
     private boolean calendar = false;
     private boolean clock = false; 
     public int Count = 0;
+    private ShortcutInfo shortcutInfo;
+    private ArrayList<ApplicationInfo> childList = new ArrayList<>(); 
+    private String packageName;
     /**
      * When set to true, indicates that the icon has been resized.
      */
@@ -136,5 +141,29 @@ class ApplicationInfo {
     }
     public boolean isCalendar() {
         return calendar; 
+    }
+    public void setIsShortcut(boolean isShortcut) {
+        this.isShortcut = isShortcut;
+    }
+    public boolean isShortcut() {
+        return isShortcut;
+    }
+    public void setShortcutInfo(ShortcutInfo shortcutInfo) {
+        this.shortcutInfo = shortcutInfo;
+    }
+    public ShortcutInfo getShortcutInfo() {
+        return this.shortcutInfo;
+    }
+    public void AddChild(ApplicationInfo child) {
+        childList.add(child); 
+    }
+    public ArrayList<ApplicationInfo> getChildList() {
+        return childList;
+    }
+    public void setPackageName(String packageName) {
+        this.packageName = packageName;
+    }
+    public String getPackageName() {
+        return this.packageName;
     }
 }
