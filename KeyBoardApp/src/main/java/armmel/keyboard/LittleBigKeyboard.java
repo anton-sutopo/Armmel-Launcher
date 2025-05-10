@@ -26,7 +26,7 @@ import android.view.inputmethod.ExtractedText;
 import android.view.inputmethod.ExtractedTextRequest;
 import android.view.inputmethod.InputConnection;
 import android.util.Log;
-
+import android.content.res.Configuration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -106,6 +106,14 @@ public class LittleBigKeyboard extends InputMethodService
         mJawaNumeralShiftedKeyboard = new Keyboard(this, R.xml.jawa_numeral_shifted);
     }
 
+    private boolean isDark() {
+        int currentNightMode = this.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
+        switch (currentNightMode) {
+            case Configuration.UI_MODE_NIGHT_YES:
+                return true;
+        }
+        return false;
+    }
     /**
      * Called by the framework when your view for creating input needs to
      * be generated.  This will be called the first time your input method
@@ -119,6 +127,7 @@ public class LittleBigKeyboard extends InputMethodService
         }
         mInputView = (ModKeyboardView) getLayoutInflater().inflate(
                 R.layout.input, null);
+        mInputView.setTheme(isDark());
         mInputView.setOnKeyboardActionListener(this);
         return mInputView;
     }
