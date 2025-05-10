@@ -2,3 +2,4 @@ build/*
 */build/*
 HomeApp/**/.classpath
 KeyBoardApp/**/.classpath
+.gradle/**
