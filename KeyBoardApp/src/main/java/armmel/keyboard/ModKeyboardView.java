@@ -110,6 +110,11 @@ public class ModKeyboardView extends View implements View.OnClickListener {
     private Context context;
     private Typeface tf;
     private Typeface tfbold;
+    private boolean isDark;
+    final int color_normal_dark   = 0xffffffff;
+    final int color_current_dark  = 0xffff0000;
+    final int color_normal_light  = 0xff000000;
+    final int color_current_light = 0xffff0000;
     Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
@@ -308,7 +313,7 @@ public class ModKeyboardView extends View implements View.OnClickListener {
         canvas.clipRect(mDirtyRect);
 
         canvas.drawColor(0x00000000, PorterDuff.Mode.CLEAR);
-        Drawable bg = getResources().getDrawable(R.drawable.keyboard_background,context.getTheme());
+        Drawable bg = getResources().getDrawable(isDark ? R.drawable.keyboard_background_dark :R.drawable.keyboard_background_light,context.getTheme());
         bg.setBounds(canvas.getClipBounds());
         bg.draw(canvas);
 
@@ -339,7 +344,7 @@ public class ModKeyboardView extends View implements View.OnClickListener {
             currentcodeindex = mCurrentCodeIndex;
 
         int[] drawableState = key.getCurrentDrawableState();
-        Drawable keyBackground = getResources().getDrawable(R.drawable.key_background,context.getTheme());
+        Drawable keyBackground = getResources().getDrawable(isDark? R.drawable.key_background_dark:R.drawable.key_background_light,context.getTheme());
         keyBackground.setState(drawableState);
 
         String labela = key.label == null? null : key.label.toString();
@@ -351,8 +356,8 @@ public class ModKeyboardView extends View implements View.OnClickListener {
         final Rect padding = mPadding;
         final int kbdPaddingLeft = getPaddingLeft();
         final int kbdPaddingTop = getPaddingTop();
-        final int color_normal  = 0xff000000;
-        final int color_current = 0xffff0000;
+        final int color_normal  = isDark? color_normal_dark: color_normal_light;
+        final int color_current = isDark? color_current_dark:color_current_light;
 
         canvas.translate(key.x + kbdPaddingLeft, key.y + kbdPaddingTop);
         keyBackground.draw(canvas);
@@ -548,5 +553,8 @@ public class ModKeyboardView extends View implements View.OnClickListener {
                 mKeyboardActionListener.onRelease(code);
             }
         }
+    }
+    public void setTheme(boolean isDark) {
+        this.isDark = isDark;
     }
 }
