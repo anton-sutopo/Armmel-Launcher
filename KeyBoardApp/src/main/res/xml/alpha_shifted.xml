@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Keyboard armmel.keyboard:horizontalGap="1.25%p" armmel.keyboard:keyHeight="@dimen/key_height" armmel.keyboard:keyWidth="18.5%p" armmel.keyboard:verticalGap="1%p"
   xmlns:android="http://schemas.android.com/apk/res/android"
-  xmlns:armmel.keyboard="http://schemas.android.com/apk/res-auto">
+  xmlns:armmel.keyboard="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent">
     <Row>
         <Key armmel.keyboard:codes="196,-99,-120,197,-122" armmel.keyboard:keyEdgeFlags="left" armmel.keyboard:keyLabel="00C4,0020,00E9,00C5,00EB" />
         <Key armmel.keyboard:codes="84,89,-121,73,72" armmel.keyboard:keyLabel="0054,0059,00E8,0049,0048" />
