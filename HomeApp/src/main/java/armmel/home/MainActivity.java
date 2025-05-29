@@ -224,7 +224,7 @@ public class MainActivity extends Activity {
 
             }
 
-            mApplications.sort((a,b)-> {return ((String) a.title).compareTo((String) b.title);});
+            mApplications.sort((a,b)-> {return ((String) a.title).compareToIgnoreCase((String) b.title);});
             Utils.writeProperties(this, p, "armel.properties","showAll Reload"); 
         }
     }
