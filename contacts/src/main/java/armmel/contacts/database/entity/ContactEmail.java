@@ -1,0 +1,37 @@
+package armmel.contacts.database.entity;
+
+public class ContactEmail implements ContactDetail {
+    private int id;
+    private Long contactId;
+    private String email;
+    private String type;
+
+    @Override
+    public String getLabel() {
+        return type+": "+email;
+    }
+
+    public ContactEmail() {}
+    public ContactEmail(String email, String type) {
+        this.email = email;
+        this.type = type;
+    }
+    @Override
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    @Override
+    public Long getContactId() { return contactId; }
+    public void setContactId(Long contactId) { this.contactId = contactId; }
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+
+    public String getType() { return type; }
+    public void setType(String type) { this.type = type; }
+
+    @Override
+    public String toString() {
+        return type+": "+ email; 
+    }
+
+}
