@@ -2,4 +2,5 @@ build/*
 */build/*
 HomeApp/**/.classpath
 KeyBoardApp/**/.classpath
+contacts/**/.classpath
 .gradle/**
