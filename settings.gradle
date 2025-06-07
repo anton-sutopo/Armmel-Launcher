@@ -1,4 +1,4 @@
+include ':Contacts'
 include ':HomeApp'
 include ':KeyBoardApp'
-include ':contacts'
 

@@ -1,8 +1,11 @@
 package armmel.contacts;
 import android.os.Bundle;
+import android.widget.ArrayAdapter;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.ImageView;
 import android.widget.Toast;
+import java.util.ArrayList;
 import java.util.List;
 import android.app.Activity;
 import armmel.contacts.database.dao.ContactDao;
@@ -54,7 +57,27 @@ public class ContactDetailActivity extends Activity {
     private ContactEmailDao emailDao;
     private ContactAddressDao addressDao;
     private ContactPhotoDao photoDao;
-
+    public static final String[] PHONE_TYPES = {
+        "Mobile",
+        "Home",
+        "Work",
+        "Main",
+        "Work Fax",
+        "Home Fax",
+        "Pager",
+        "Other"
+    };
+    public static final String[] EMAIL_TYPES = {
+        "Home",       // TYPE_HOME
+        "Work",       // TYPE_WORK
+        "Other",      // TYPE_OTHER
+        "Mobile"      // TYPE_MOBILE
+    };
+    public static final String[] ADDRESS_TYPES = {
+        "Home",       // TYPE_HOME
+        "Work",       // TYPE_WORK
+        "Other"       // TYPE_OTHER
+    };
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -77,21 +100,21 @@ public class ContactDetailActivity extends Activity {
             return;
         }
         addPhone.setOnClickListener(v -> {
-            showEditPhoneDialog(null, newPhone -> {
+            showEditPhoneDialog(PHONE_TYPES, null, newPhone -> {
                 newPhone.setContactId(contactId);
                 phoneDao.insert(newPhone);
                 loadAndDisplayPhones(contactId);
             });
         });
         addEmail.setOnClickListener(v -> {
-            showEditEmailDialog(null, newEmail -> {
+            showEditEmailDialog(EMAIL_TYPES, null, newEmail -> {
                 newEmail.setContactId(contactId);
                 emailDao.insert(newEmail);
                 loadAndDisplayEmail(contactId);
             });
         });
         addAddress.setOnClickListener(v -> {
-            showEditAddressDialog(null, newAddress -> {
+            showEditAddressDialog(ADDRESS_TYPES, null, newAddress -> {
                 newAddress.setContactId(contactId);
                 addressDao.insert(newAddress);
                 loadAndDisplayAddresses(contactId);
@@ -176,7 +199,7 @@ public class ContactDetailActivity extends Activity {
         for (ContactAddress address : addresses) {
             addressContainer.addView(createContactRow(
                         address,
-                        () -> showEditAddressDialog(address, newAddress -> {
+                        () -> showEditAddressDialog( ADDRESS_TYPES, address, newAddress -> {
                             int row = addressDao.update(newAddress);
 
                             if (row >= 1) {
@@ -212,7 +235,7 @@ public class ContactDetailActivity extends Activity {
         for (ContactEmail email : emails) {
             emailContainer.addView(createContactRow(
                         email,
-                        () -> showEditEmailDialog(email, newEmail -> {
+                        () -> showEditEmailDialog(EMAIL_TYPES, email, newEmail -> {
                             int row = emailDao.update(newEmail);
 
                             if (row >= 1) {
@@ -248,11 +271,10 @@ public class ContactDetailActivity extends Activity {
     }
 
     private void formatPhoneList(List<ContactPhone> phones) {
-
         for (ContactPhone phone : phones) {
             phonesContainer.addView(createContactRow(
                         phone,
-                        () -> showEditPhoneDialog(phone, newPhone -> {
+                        () -> showEditPhoneDialog(PHONE_TYPES,phone, newPhone -> {
                             int row = phoneDao.update(newPhone);
                             if (row >= 1) {
                                 Toast.makeText(this, "Updated", Toast.LENGTH_SHORT).show();
@@ -386,10 +408,8 @@ public class ContactDetailActivity extends Activity {
                     ));
         deleteBtn.setOnClickListener(v -> onDelete.run());
 
-        // Add icons to button layout
         buttonLayout.addView(deleteBtn);
 
-        // Add both views to row
         rowLayout.addView(phoneTextView);
         rowLayout.addView(buttonLayout);
 
@@ -418,78 +438,155 @@ public class ContactDetailActivity extends Activity {
         formatAddressList(addresses);
     }
 
-    private void showEditAddressDialog(ContactAddress contactAddress, Consumer<ContactAddress> onSaveCallback) {
+    private void showEditAddressDialog(String[] addressType, ContactAddress contactAddress, Consumer<ContactAddress> onSaveCallback) {
         LayoutInflater inflater = LayoutInflater.from(this);
         View view = inflater.inflate(R.layout.dialog_edit_phone, null);
         EditText editPhone = view.findViewById(R.id.editPhone);
-        EditText editType = view.findViewById(R.id.editType);
         editPhone.setInputType(InputType.TYPE_TEXT_VARIATION_POSTAL_ADDRESS);
+        Spinner spinnerType = view.findViewById(R.id.spinnerType);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                this, // use getContext() if in fragment
+                android.R.layout.simple_spinner_item,
+                addressType
+                );
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerType.setAdapter(adapter);
         if(contactAddress != null) {
             editPhone.setText(contactAddress.getAddress());
-            editType.setText(contactAddress.getType());
+            setSpinnerToValue(spinnerType, contactAddress.getType());
         }
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(contactAddress != null? "Edit Address": "Add Address")
             .setView(view)
             .setPositiveButton("Save", (dialog, which) -> {
-                // Update the object
                 ContactAddress address = contactAddress == null? new ContactAddress(): contactAddress; 
                 address.setAddress(editPhone.getText().toString().trim());
-                address.setType(editType.getText().toString().trim());
+                String selectedLabel = spinnerType.getSelectedItem().toString();
+                address.setType(selectedLabel);
                 onSaveCallback.accept(address);
             })
         .setNegativeButton("Cancel", null)
             .show();
     }
-    private void showEditEmailDialog(ContactEmail contactEmail, Consumer<ContactEmail> onSaveCallback) {
+
+
+    private void showEditEmailDialog(String[] emailTypes, ContactEmail contactEmail, Consumer<ContactEmail> onSaveCallback) {
         LayoutInflater inflater = LayoutInflater.from(this);
         View view = inflater.inflate(R.layout.dialog_edit_phone, null);
         EditText editPhone = view.findViewById(R.id.editPhone);
-        EditText editType = view.findViewById(R.id.editType);
         editPhone.setInputType(InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS);
+        Spinner spinnerType = view.findViewById(R.id.spinnerType);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                this, // use getContext() if in fragment
+                android.R.layout.simple_spinner_item,
+                emailTypes
+                );
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerType.setAdapter(adapter);
         if(contactEmail != null) {
             editPhone.setText(contactEmail.getEmail());
-            editType.setText(contactEmail.getType());
+            setSpinnerToValue(spinnerType, contactEmail.getType());
         }
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(contactEmail != null? "Edit Email": "Add Email")
             .setView(view)
             .setPositiveButton("Save", (dialog, which) -> {
-                // Update the object
                 ContactEmail email = contactEmail == null? new ContactEmail(): contactEmail; 
                 email.setEmail(editPhone.getText().toString().trim());
-                email.setType(editType.getText().toString().trim());
+                String selectedLabel = spinnerType.getSelectedItem().toString();
+                email.setType(selectedLabel);
                 onSaveCallback.accept(email);
             })
         .setNegativeButton("Cancel", null)
             .show();
     }
 
-    private void showEditPhoneDialog(ContactPhone contactPhone, Consumer<ContactPhone> onSaveCallback) {
+    private void showEditPhoneDialog(String[]  phoneTypes, ContactPhone contactPhone, Consumer<ContactPhone> onSaveCallback) {
         LayoutInflater inflater = LayoutInflater.from(this);
         View view = inflater.inflate(R.layout.dialog_edit_phone, null);
 
         EditText editPhone = view.findViewById(R.id.editPhone);
-        EditText editType = view.findViewById(R.id.editType);
-
         editPhone.setInputType(InputType.TYPE_CLASS_PHONE);
-        // Pre-fill the fields
+        Spinner spinnerType = view.findViewById(R.id.spinnerType);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                this, // use getContext() if in fragment
+                android.R.layout.simple_spinner_item,
+                phoneTypes
+                );
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerType.setAdapter(adapter);
+
         if(contactPhone != null) {
             editPhone.setText(contactPhone.getPhone());
-            editType.setText(contactPhone.getType());
+            setSpinnerToValue(spinnerType, mapFromVcfType(contactPhone.getType()));
         }
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(contactPhone !=null ?"Edit Phone": "Add Phone")
             .setView(view)
             .setPositiveButton("Save", (dialog, which) -> {
-                // Update the object
                 ContactPhone phone = contactPhone == null? new ContactPhone(): contactPhone; 
                 phone.setPhone(editPhone.getText().toString().trim());
-                phone.setType(editType.getText().toString().trim());
+                String selectedLabel = spinnerType.getSelectedItem().toString();
+                String vcfType = mapToVcfType(selectedLabel);
+                phone.setType(vcfType);
                 onSaveCallback.accept(phone);
             })
         .setNegativeButton("Cancel", null)
             .show();
+    }
+    void setSpinnerToValue(Spinner spinner, String label) {
+        ArrayAdapter adapter = (ArrayAdapter) spinner.getAdapter();
+        for (int i = 0; i < adapter.getCount(); i++) {
+            if (adapter.getItem(i).toString().equalsIgnoreCase(label)) {
+                spinner.setSelection(i);
+                break;
+            }
+        }
+    }
+    String mapFromVcfType(String vcfType) {
+        switch (vcfType.toUpperCase()) {
+            case "CELL":
+                return "Mobile";
+            case "HOME":
+                return "Home";
+            case "WORK":
+                return "Work";
+            case "MAIN":
+                return "Main";
+            case "WORK,FAX":
+                return "Work Fax";
+            case "HOME,FAX":
+                return "Home Fax";
+            case "PAGER":
+                return "Pager";
+            case "OTHER":
+                return "Other";
+            default:
+                return "Mobile"; // fallback
+        }
+    }
+
+    String mapToVcfType(String label) {
+        switch (label) {
+            case "Mobile":
+                return "CELL";
+            case "Home":
+                return "HOME";
+            case "Work":
+                return "WORK";
+            case "Main":
+                return "MAIN";
+            case "Work Fax":
+                return "WORK,FAX";
+            case "Home Fax":
+                return "HOME,FAX";
+            case "Pager":
+                return "PAGER";
+            case "Other":
+                return "OTHER";
+            default:
+                return "VOICE";
+        }
     }
 
 }

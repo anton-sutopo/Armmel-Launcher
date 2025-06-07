@@ -59,27 +59,6 @@ public class ContactDao {
         return id;
     }
 
-    public List<Contact> getAllSortByName() {
-        List<Contact> list = new ArrayList<>();
-        SQLiteDatabase db = dbHelper.getReadableDatabase();
-        Cursor cursor = db.query("contacts", null, null, null, null, null, "name asc");
-
-        if (cursor.moveToFirst()) {
-            do {
-                Contact contact = new Contact();
-                contact.setId(cursor.getLong(cursor.getColumnIndexOrThrow("id")));
-                contact.setName(cursor.getString(cursor.getColumnIndexOrThrow("name")));
-                contact.setOrg(cursor.getString(cursor.getColumnIndexOrThrow("org")));
-                contact.setTitle(cursor.getString(cursor.getColumnIndexOrThrow("title")));
-                contact.setCreatedAt(cursor.getString(cursor.getColumnIndexOrThrow("created_at")));
-                list.add(contact);
-            } while (cursor.moveToNext());
-        }
-
-        cursor.close();
-        db.close();
-        return list;
-    }
     public List<Contact> getAllFiltered(String name) {
         List<Contact> list = new ArrayList<>();
         SQLiteDatabase db = dbHelper.getReadableDatabase();
@@ -103,27 +82,6 @@ public class ContactDao {
         return list;
     }
 
-    public List<Contact> getAll() {
-        List<Contact> list = new ArrayList<>();
-        SQLiteDatabase db = dbHelper.getReadableDatabase();
-        Cursor cursor = db.query("contacts", null, null, null, null, null, "created_at DESC");
-
-        if (cursor.moveToFirst()) {
-            do {
-                Contact contact = new Contact();
-                contact.setId(cursor.getLong(cursor.getColumnIndexOrThrow("id")));
-                contact.setName(cursor.getString(cursor.getColumnIndexOrThrow("name")));
-                contact.setOrg(cursor.getString(cursor.getColumnIndexOrThrow("org")));
-                contact.setTitle(cursor.getString(cursor.getColumnIndexOrThrow("title")));
-                contact.setCreatedAt(cursor.getString(cursor.getColumnIndexOrThrow("created_at")));
-                list.add(contact);
-            } while (cursor.moveToNext());
-        }
-
-        cursor.close();
-        db.close();
-        return list;
-    }
 
     public Contact getById(Long id) {
         SQLiteDatabase db = dbHelper.getReadableDatabase();

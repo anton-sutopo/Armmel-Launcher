@@ -1,5 +1,0 @@
-<resources>
-    <string name="app_name">Contacts</string>
-    <string name="action_import">Import Vcf</string>
-    <string name="action_delete_all">Remove All</string>
-</resources>

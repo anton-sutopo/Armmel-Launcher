@@ -12,12 +12,11 @@
         android:hint="Phone Number"
         android:inputType="phone" />
 
-    <EditText
-        android:id="@+id/editType"
+    <Spinner
+        android:id="@+id/spinnerType"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Type (e.g. Mobile, Work)"
-        android:inputType="text" />
+        android:prompt="@string/type_prompt" />
 
 </LinearLayout>
 
