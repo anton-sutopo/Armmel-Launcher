@@ -1,5 +1,6 @@
 package armmel.contacts;
 import android.os.Bundle;
+import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -103,21 +104,21 @@ public class ContactDetailActivity extends Activity {
             showEditPhoneDialog(PHONE_TYPES, null, newPhone -> {
                 newPhone.setContactId(contactId);
                 phoneDao.insert(newPhone);
-                loadAndDisplayPhones(contactId);
+                loadAndDisplay(phonesContainer, phoneDao.getByContactId(contactId),this::formatPhoneList );
             });
         });
         addEmail.setOnClickListener(v -> {
             showEditEmailDialog(EMAIL_TYPES, null, newEmail -> {
                 newEmail.setContactId(contactId);
                 emailDao.insert(newEmail);
-                loadAndDisplayEmail(contactId);
+                loadAndDisplay(emailContainer, emailDao.getByContactId(contactId),this::formatEmailList );
             });
         });
         addAddress.setOnClickListener(v -> {
             showEditAddressDialog(ADDRESS_TYPES, null, newAddress -> {
                 newAddress.setContactId(contactId);
                 addressDao.insert(newAddress);
-                loadAndDisplayAddresses(contactId);
+                loadAndDisplay(addressContainer, addressDao.getByContactId(contactId),this::formatAddressList );
             });
         });
 
@@ -208,7 +209,7 @@ public class ContactDetailActivity extends Activity {
                                 Toast.makeText(this, "Update failed", Toast.LENGTH_SHORT).show();
                             }
                             // Run callback to update the UI
-                            loadAndDisplayAddresses(address.getContactId());
+                            loadAndDisplay(addressContainer, addressDao.getByContactId(address.getContactId()),this::formatAddressList );
                         }),
                         v -> {
                         },
@@ -219,7 +220,7 @@ public class ContactDetailActivity extends Activity {
                                 .setPositiveButton("Yes", (dialog, which) -> {
                                     if (addressDao.delete(address.getId()) >=1) {
                                         Toast.makeText(this, "Deleted", Toast.LENGTH_SHORT).show();
-                                        loadAndDisplayAddresses(address.getContactId());
+                                        loadAndDisplay(addressContainer, addressDao.getByContactId(address.getContactId()),this::formatAddressList );
                                     } else {
                                         Toast.makeText(this, "Delete failed", Toast.LENGTH_SHORT).show();
                                     }
@@ -244,7 +245,7 @@ public class ContactDetailActivity extends Activity {
                                 Toast.makeText(this, "Update failed", Toast.LENGTH_SHORT).show();
                             }
                             // Run callback to update the UI
-                            loadAndDisplayEmail(email.getContactId());
+                            loadAndDisplay(emailContainer, emailDao.getByContactId(email.getContactId()),this::formatEmailList );
                         }),
                         v -> {
                             Intent intent = new Intent(Intent.ACTION_SENDTO);
@@ -258,7 +259,7 @@ public class ContactDetailActivity extends Activity {
                                 .setPositiveButton("Yes", (dialog, which) -> {
                                     if (emailDao.delete(email.getId()) >=1) {
                                         Toast.makeText(this, "Deleted", Toast.LENGTH_SHORT).show();
-                                        loadAndDisplayEmail(email.getContactId());
+                                        loadAndDisplay(emailContainer, emailDao.getByContactId(email.getContactId()),this::formatEmailList );
                                     } else {
                                         Toast.makeText(this, "Delete failed", Toast.LENGTH_SHORT).show();
                                     }
@@ -283,7 +284,7 @@ public class ContactDetailActivity extends Activity {
                             }
                             // Run callback to update the UI
 
-                            loadAndDisplayPhones(phone.getContactId());
+                            loadAndDisplay(phonesContainer, phoneDao.getByContactId(phone.getContactId()),this::formatPhoneList );
                         }),
                         v -> {
                             PopupMenu popup = new PopupMenu(this, v);
@@ -324,7 +325,7 @@ public class ContactDetailActivity extends Activity {
                                 .setPositiveButton("Yes", (dialog, which) -> {
                                     if (phoneDao.delete(phone.getId()) >=1) {
                                         Toast.makeText(this, "Deleted", Toast.LENGTH_SHORT).show();
-                                        loadAndDisplayPhones(phone.getContactId());
+                                        loadAndDisplay(phonesContainer, phoneDao.getByContactId(phone.getContactId()),this::formatPhoneList );
                                     } else {
                                         Toast.makeText(this, "Delete failed", Toast.LENGTH_SHORT).show();
                                     }
@@ -416,27 +417,11 @@ public class ContactDetailActivity extends Activity {
         return rowLayout;
 
     }
-
-    public void loadAndDisplayPhones(Long contactId) {
-        phonesContainer.removeAllViews(); // clear current UI
-
-        List<ContactPhone> phones = phoneDao.getByContactId(contactId); // your own method
-        formatPhoneList(phones);
+    private <T> void loadAndDisplay(ViewGroup container, List<T> dataList, Consumer<List<T>> formatter) {
+        container.removeAllViews();
+        formatter.accept(dataList);
     }
 
-    private void loadAndDisplayEmail(Long contactId) {
-        emailContainer.removeAllViews(); // clear current UI
-
-        List<ContactEmail> emails = emailDao.getByContactId(contactId); // your own method
-        formatEmailList(emails);
-    }
-
-    private void loadAndDisplayAddresses(Long contactId) {
-        addressContainer.removeAllViews(); // clear current UI
-
-        List<ContactAddress> addresses = addressDao.getByContactId(contactId); // your own method
-        formatAddressList(addresses);
-    }
 
     private void showEditAddressDialog(String[] addressType, ContactAddress contactAddress, Consumer<ContactAddress> onSaveCallback) {
         LayoutInflater inflater = LayoutInflater.from(this);
