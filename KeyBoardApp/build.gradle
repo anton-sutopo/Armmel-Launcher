@@ -1,61 +1,61 @@
 buildscript { 
-	repositories { 
-			mavenCentral()	
-			 google()
+    repositories { 
+        mavenCentral()	
+            google()
 
-	} 
-	
-	dependencies 
-	{ 
-		classpath 'com.android.tools.build:gradle:4.2.+' 
-	} 
+    } 
+
+    dependencies 
+    { 
+        classpath 'com.android.tools.build:gradle:4.2.+' 
+    } 
 } 
 
 apply plugin: 'android'
 
 dependencies { 
-	repositories { 
-		     mavenCentral()	
-			google()
-	}
+    repositories { 
+        mavenCentral()	
+            google()
+    }
 
-	implementation fileTree(dir: 'libs', include: '*.jar')
+    implementation fileTree(dir: 'libs', include: '*.jar')
 
 }
 
 /*Gets the version name from the latest Git tag */ 
 
 android { 
-	namespace 'armmel.keyboard'
+    namespace 'armmel.keyboard'
         defaultConfig { 
-		versionCode 20 
-		versionName 'Arm Keyboard'
-		minSdkVersion 28
-		targetSdkVersion 29
+            versionCode 20 
+                versionName 'Arm Keyboard'
+                minSdkVersion 28
+                targetSdkVersion 29
 
-	}
+        }
 
-  compileSdkVersion 'android-29'
-	compileOptions {
-        sourceCompatibility 1.8
-        targetCompatibility 1.8
+    compileSdkVersion 'android-29'
+        compileOptions {
+            sourceCompatibility 1.8
+                targetCompatibility 1.8
+        }
+    signingConfigs {
+        release {
+            storeFile file("/home/sutopo/project/arm-release.keystore")
+                storePassword "12345678"
+                keyAlias "armkey"
+                keyPassword "12345678"
+        }
     }
-  signingConfigs {
-      release {
-        storeFile file("/home/sutopo/project/arm-release.keystore")
-          storePassword "12345678"
-          keyAlias "armkey"
-          keyPassword "12345678"
-      }
-  }
 
-  buildTypes {
-	  debug {
-		zipAlignEnabled true
-	  }
-      release {
-          signingConfig signingConfigs.release
-      }
-  }
+    buildTypes {
+        debug {
+            zipAlignEnabled true
+        }
+        release {
+            signingConfig signingConfigs.release
+        }
+    }
 
 }

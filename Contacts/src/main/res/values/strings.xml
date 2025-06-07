@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">Contacts</string>
+    <string name="action_import">Import Vcf</string>
+    <string name="action_delete_all">Remove All</string>
+    <string name="type_prompt">Select Type</string>
+    <string-array name="phone_types">
+        <item>Mobile</item>      <!-- VCF: CELL -->
+        <item>Home</item>        <!-- VCF: HOME -->
+        <item>Work</item>        <!-- VCF: WORK -->
+        <item>Main</item>        <!-- VCF: MAIN -->
+        <item>Work Fax</item>    <!-- VCF: WORK,FAX -->
+        <item>Home Fax</item>    <!-- VCF: HOME,FAX -->
+        <item>Pager</item>       <!-- VCF: PAGER -->
+        <item>Other</item>       <!-- VCF: OTHER -->
+    </string-array>
+</resources>
