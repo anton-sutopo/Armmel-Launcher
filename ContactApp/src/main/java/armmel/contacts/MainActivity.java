@@ -1,5 +1,6 @@
 package armmel.contacts;
 
+import armmel.contacts.utils.ThemeUtils;
 import android.Manifest;
 import android.content.ContentResolver;
 import android.content.Intent;
@@ -53,12 +54,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        int currentNightMode = getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
-        if (currentNightMode == Configuration.UI_MODE_NIGHT_YES) {
-            setTheme(R.style.AppTheme_Dark);
-        } else {
-            setTheme(R.style.AppTheme_Light);
-        } 
+        ThemeUtils.applyTheme(this);
         super.onCreate(savedInstanceState); 
         setContentView(R.layout.activity_main);
 

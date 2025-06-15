@@ -2,11 +2,11 @@
 
     <!-- Base application theme. -->
     <style name="AppTheme.Light" parent="android:Theme.Holo.Light">
-        <!-- Customize your theme here. -->
+        <item name="android:windowBackground">@color/light_background</item>
     </style>
 
     <style name="AppTheme.Dark" parent="android:Theme.Holo">
-        <!-- Customize your theme here. -->
+        <item name="android:windowBackground">@color/dark_background</item>
     </style>
 
 
