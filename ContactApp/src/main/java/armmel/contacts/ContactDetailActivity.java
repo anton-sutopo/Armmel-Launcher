@@ -1,4 +1,5 @@
 package armmel.contacts;
+import armmel.contacts.utils.ThemeUtils;
 import android.os.Bundle;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
@@ -81,6 +82,7 @@ public class ContactDetailActivity extends Activity {
     };
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        ThemeUtils.applyTheme(this);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_contact_detail);
         setTitle("Contact Detail");
