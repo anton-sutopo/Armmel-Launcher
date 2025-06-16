@@ -1,5 +1,6 @@
 package armmel.contacts;
 
+import armmel.contacts.utils.VcfExporter;
 import armmel.contacts.utils.ThemeUtils;
 import android.Manifest;
 import android.content.ContentResolver;
@@ -19,6 +20,7 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
 import android.app.Activity;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.MissingFormatArgumentException;
@@ -38,7 +40,8 @@ import android.widget.SearchView;
 
 // Demo do see how to use content provider
 public class MainActivity extends Activity {
-
+    private static final int REQUEST_OPEN_VCF = 1000;
+    private static final int CREATE_VCF_FILE_REQUEST_CODE=1001; 
     private static final String TAG = "MainActivity";
     private ListView contactNames;
     ImageButton fab = null;
@@ -84,7 +87,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == 1 && resultCode == RESULT_OK) {
+        if (requestCode == REQUEST_OPEN_VCF  && resultCode == RESULT_OK) {
             Uri uri = data.getData();
             if (uri != null) {
                 try {
@@ -97,6 +100,21 @@ public class MainActivity extends Activity {
                     contactAdapter.updateData(contactDao.getAllFiltered("")); // Re-fetch current data
                 } catch(Exception e) {
                 }
+            }
+        } else if (requestCode == CREATE_VCF_FILE_REQUEST_CODE && resultCode == RESULT_OK && data != null) {
+            Uri uri = data.getData();  // user-chosen URI
+
+            try (OutputStream out = getContentResolver().openOutputStream(uri)) {
+                // export to memory, not file
+                VcfExporter exporter = new VcfExporter(this);
+                String vcfContent = exporter.exportToVcf(VcfExporter.VCardVersion.VCARD_30);
+
+                out.write(vcfContent.getBytes());
+                out.flush();
+                Toast.makeText(this, "Exported to: " + uri.getLastPathSegment(), Toast.LENGTH_LONG).show();
+            } catch (IOException e) {
+                e.printStackTrace();
+                Toast.makeText(this, "Failed to save vCard", Toast.LENGTH_SHORT).show();
             }
         }
     }
@@ -140,12 +158,18 @@ public class MainActivity extends Activity {
             Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
             intent.setType("*/*"); // All file types
             intent.addCategory(Intent.CATEGORY_OPENABLE);
-            startActivityForResult(Intent.createChooser(intent, "Select a file"), 1);
+            startActivityForResult(Intent.createChooser(intent, "Select a file"), REQUEST_OPEN_VCF);
 
             return true;
         } else if(id == R.id.action_delete_all) {
             contactDao.deleteAll();
             contactAdapter.updateData(contactDao.getAllFiltered("")); // Re-fetch current data
+        } else if(id == R.id.action_export) {
+            Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            intent.setType("text/x-vcard");
+            intent.putExtra(Intent.EXTRA_TITLE, "contacts.vcf");  // default name
+            startActivityForResult(intent, CREATE_VCF_FILE_REQUEST_CODE);
         }
 
         return super.onOptionsItemSelected(item);
