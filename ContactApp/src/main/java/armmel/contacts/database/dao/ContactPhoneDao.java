@@ -14,6 +14,28 @@ public class ContactPhoneDao {
     public ContactPhoneDao(Context context) {
         this.dbHelper = new DBHelper(context);
     }
+    
+    public List<ContactPhone> getAllFiltered(String term) {
+        List<ContactPhone> list = new ArrayList<>();
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+        Cursor cursor = db.query("contact_phones", null,"phone like ?" , new String[] {"%"+term+"%"} , null, null, "phone ASC");
+
+        if (cursor.moveToFirst()) {
+            do {
+                ContactPhone contact = new ContactPhone();
+                contact.setId(cursor.getInt(cursor.getColumnIndexOrThrow("id")));
+                contact.setPhone(cursor.getString(cursor.getColumnIndexOrThrow("phone")));
+                contact.setType(cursor.getString(cursor.getColumnIndexOrThrow("type")));
+                contact.setContactId(cursor.getLong(cursor.getColumnIndexOrThrow("contact_id")));
+                list.add(contact);
+            } while (cursor.moveToNext());
+        }
+
+        cursor.close();
+        db.close();
+        list.sort((a,b)-> {return a.getPhone().compareToIgnoreCase(b.getPhone());});
+        return list;
+    }
 
     public long insert(ContactPhone phone) {
         SQLiteDatabase db = dbHelper.getWritableDatabase();

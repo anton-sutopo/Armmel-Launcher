@@ -1,5 +1,7 @@
 package armmel.contacts;
 
+import armmel.contacts.dto.SearchService;
+import armmel.contacts.dto.Search;
 import armmel.contacts.utils.VcfExporter;
 import armmel.contacts.utils.ThemeUtils;
 import android.Manifest;
@@ -46,13 +48,14 @@ public class MainActivity extends Activity {
     private ListView contactNames;
     ImageButton fab = null;
     private ContactAdapter contactAdapter;
+    private SearchService searchService;
     private ContactDao contactDao;
     private String query="";
 
     @Override
     public void onResume() {
         super.onResume();
-        contactAdapter.updateData(contactDao.getAllFiltered(query)); // Re-fetch current data
+        contactAdapter.updateData(searchService.getAllFiltered(query)); // Re-fetch current data
     }
 
     @Override
@@ -60,16 +63,16 @@ public class MainActivity extends Activity {
         ThemeUtils.applyTheme(this);
         super.onCreate(savedInstanceState); 
         setContentView(R.layout.activity_main);
-
-        contactNames = (ListView) findViewById(R.id.contact_names);
         contactDao = new ContactDao(this);
-        List<Contact> contacts = new LinkedList<>();
+        contactNames = (ListView) findViewById(R.id.contact_names);
+        searchService = new SearchService(this);
+        List<Search> contacts = new LinkedList<>();
         contactAdapter = new ContactAdapter(this, contacts);
         contactNames.setAdapter(contactAdapter);
         contactNames.setOnItemClickListener((parent, view, position, id) -> {
-            Contact selectedContact = (Contact) contactAdapter.getItem(position);
+            Search selectedContact = (Search) contactAdapter.getItem(position);
             Intent intent = new Intent(MainActivity.this, ContactDetailActivity.class);
-            intent.putExtra("contact_id", selectedContact.getId()); // Pass contact ID
+            intent.putExtra("contact_id", selectedContact.getContactId()); // Pass contact ID
             startActivity(intent); 
         }); 
 
@@ -97,7 +100,7 @@ public class MainActivity extends Activity {
                     for(Contact ct: contacts) {
                         cd.insert(ct);
                     }
-                    contactAdapter.updateData(contactDao.getAllFiltered("")); // Re-fetch current data
+                    contactAdapter.updateData(searchService.getAllFiltered("")); // Re-fetch current data
                 } catch(Exception e) {
                 }
             }
@@ -142,7 +145,7 @@ public class MainActivity extends Activity {
         return true;
     }
     private void filterContacts(String keyword) {
-        List<Contact> filtered = contactDao.getAllFiltered(keyword);
+        List<Search> filtered = searchService.getAllFiltered(keyword);
         contactAdapter.updateData(filtered);
     }
     @Override
@@ -163,7 +166,7 @@ public class MainActivity extends Activity {
             return true;
         } else if(id == R.id.action_delete_all) {
             contactDao.deleteAll();
-            contactAdapter.updateData(contactDao.getAllFiltered("")); // Re-fetch current data
+            contactAdapter.updateData(searchService.getAllFiltered("")); // Re-fetch current data
         } else if(id == R.id.action_export) {
             Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
             intent.addCategory(Intent.CATEGORY_OPENABLE);
