@@ -7,6 +7,7 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.ImageView;
 import android.widget.Toast;
+import armmel.contacts.utils.Utils;
 import java.util.ArrayList;
 import java.util.List;
 import android.app.Activity;
@@ -104,6 +105,7 @@ public class ContactDetailActivity extends Activity {
         }
         addPhone.setOnClickListener(v -> {
             showEditPhoneDialog(PHONE_TYPES, null, newPhone -> {
+                newPhone.setPhone(Utils.removeForPhone(newPhone.getPhone()));
                 newPhone.setContactId(contactId);
                 phoneDao.insert(newPhone);
                 loadAndDisplay(phonesContainer, phoneDao.getByContactId(contactId),this::formatPhoneList );
@@ -278,6 +280,7 @@ public class ContactDetailActivity extends Activity {
             phonesContainer.addView(createContactRow(
                         phone,
                         () -> showEditPhoneDialog(PHONE_TYPES,phone, newPhone -> {
+                            newPhone.setPhone(Utils.removeForPhone(newPhone.getPhone()));
                             int row = phoneDao.update(newPhone);
                             if (row >= 1) {
                                 Toast.makeText(this, "Updated", Toast.LENGTH_SHORT).show();

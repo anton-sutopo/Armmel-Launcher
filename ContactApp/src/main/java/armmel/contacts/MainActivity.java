@@ -55,7 +55,7 @@ public class MainActivity extends Activity {
     @Override
     public void onResume() {
         super.onResume();
-        contactAdapter.updateData(searchService.getAllFiltered(query)); // Re-fetch current data
+        contactAdapter.updateData(query); // Re-fetch current data
     }
 
     @Override
@@ -100,7 +100,7 @@ public class MainActivity extends Activity {
                     for(Contact ct: contacts) {
                         cd.insert(ct);
                     }
-                    contactAdapter.updateData(searchService.getAllFiltered("")); // Re-fetch current data
+                    contactAdapter.updateData(""); // Re-fetch current data
                 } catch(Exception e) {
                 }
             }
@@ -145,8 +145,7 @@ public class MainActivity extends Activity {
         return true;
     }
     private void filterContacts(String keyword) {
-        List<Search> filtered = searchService.getAllFiltered(keyword);
-        contactAdapter.updateData(filtered);
+        contactAdapter.updateData(keyword);
     }
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -166,7 +165,7 @@ public class MainActivity extends Activity {
             return true;
         } else if(id == R.id.action_delete_all) {
             contactDao.deleteAll();
-            contactAdapter.updateData(searchService.getAllFiltered("")); // Re-fetch current data
+            contactAdapter.updateData(""); // Re-fetch current data
         } else if(id == R.id.action_export) {
             Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
             intent.addCategory(Intent.CATEGORY_OPENABLE);

@@ -98,7 +98,8 @@ public class SearchService {
 
     public List<Search> getAllFiltered(String term) {
         List<Search> result = new ArrayList<>(); 
-        if(Utils.isNumeric(term)){
+        if(Utils.isPartialPhoneNumber(term)){
+            term = Utils.removeForPhone(term);
             result = findSearchByPhoneTerm(term); 
         } else if(term.startsWith("@")) {
             String s = term.length() > 1? term.substring(1):"";
