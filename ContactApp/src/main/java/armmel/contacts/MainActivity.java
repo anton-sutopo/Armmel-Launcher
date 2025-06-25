@@ -1,5 +1,6 @@
 package armmel.contacts;
 
+import armmel.contacts.database.repository.ContactRepository;
 import armmel.contacts.dto.SearchService;
 import armmel.contacts.dto.Search;
 import armmel.contacts.utils.VcfExporter;
@@ -49,7 +50,7 @@ public class MainActivity extends Activity {
     ImageButton fab = null;
     private ContactAdapter contactAdapter;
     private SearchService searchService;
-    private ContactDao contactDao;
+    private ContactRepository contactDao;
     private String query="";
 
     @Override
@@ -63,7 +64,7 @@ public class MainActivity extends Activity {
         ThemeUtils.applyTheme(this);
         super.onCreate(savedInstanceState); 
         setContentView(R.layout.activity_main);
-        contactDao = new ContactDao(this);
+        contactDao = new ContactRepository(this);
         contactNames = (ListView) findViewById(R.id.contact_names);
         searchService = new SearchService(this);
         List<Search> contacts = new LinkedList<>();
@@ -96,7 +97,7 @@ public class MainActivity extends Activity {
                 try {
                     InputStream inputStream = getContentResolver().openInputStream(uri);
                     List<Contact> contacts = VcfParser.parse(inputStream);
-                    ContactDao cd = new ContactDao(this);
+                    ContactRepository cd = new ContactRepository(this);
                     for(Contact ct: contacts) {
                         cd.insert(ct);
                     }

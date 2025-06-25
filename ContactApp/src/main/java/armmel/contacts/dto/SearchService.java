@@ -2,9 +2,11 @@ package armmel.contacts.dto;
 
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.util.Log;
 import armmel.contacts.database.DBHelper;
-import armmel.contacts.database.dao.ContactPhoneDao;
+import armmel.contacts.database.repository.ContactRepository;
 import armmel.contacts.database.entity.ContactPhone;
+import armmel.contacts.orm.DaoFactory;
 import armmel.contacts.utils.Utils;
 import android.content.Context;
 import armmel.contacts.database.dao.ContactDao;
@@ -18,79 +20,50 @@ import java.util.Map;
 
 public class SearchService {
     private Context context;
-    private ContactDao contactDao;
+    private ContactRepository contactDao;
     private final DBHelper dbHelper;
     public SearchService(Context context) {
         this.context = context;
-        this.contactDao = new ContactDao(context);
+        this.contactDao = new ContactRepository(context);
         this.dbHelper = new DBHelper(context);
     }
     public List<Search> findSearchByEmailTerm(String term) {
         Map<Long, Search> searchMap = new LinkedHashMap<>();
 
+        ContactDao contactDao = DaoFactory.create(ContactDao.class, dbHelper.getReadableDatabase());
+        List<SearchDto> lsd = contactDao.getContactWithEmail("%"+term+"%");
+        for (SearchDto sd : lsd) {
+            long id = sd.getContactId();
+            String name = sd.getName();
+            String email = sd.getResult();
 
-        SQLiteDatabase db = dbHelper.getReadableDatabase();
-
-        String sql = "SELECT c.id, c.name, p.email " +
-            "FROM contacts c " +
-            "JOIN contact_emails p ON c.id = p.contact_id " +
-            "WHERE p.email LIKE ? " +
-            "ORDER BY c.name ASC";
-
-        String[] selectionArgs = new String[] { "%" + term.trim() + "%" };
-
-        Cursor cursor = db.rawQuery(sql, selectionArgs);
-
-        if (cursor != null) {
-            while (cursor.moveToNext()) {
-                long id = cursor.getLong(cursor.getColumnIndexOrThrow("id"));
-                String name = cursor.getString(cursor.getColumnIndexOrThrow("name"));
-                String email = cursor.getString(cursor.getColumnIndexOrThrow("email"));
-
-                Search s = searchMap.get(id);
-                if (s == null) {
-                    s = new Search(id, name);
-                    searchMap.put(id, s);
-                }
-
-                s.getResult().add(email);
+            Search s = searchMap.get(id);
+            if (s == null) {
+                s = new Search(id, name);
+                searchMap.put(id, s);
             }
-            cursor.close();
+
+            s.getResult().add(email);
         }
 
         return new ArrayList<>(searchMap.values());
     }
     public List<Search> findSearchByPhoneTerm(String term) {
         Map<Long, Search> searchMap = new LinkedHashMap<>();
+        ContactDao contactDao = DaoFactory.create(ContactDao.class, dbHelper.getReadableDatabase());
+        List<SearchDto> lsd = contactDao.getContactWithPhones("%"+term+"%");
+        for (SearchDto sd : lsd) {
+            long id = sd.getContactId();
+            String name = sd.getName();
+            String phone = sd.getResult();
 
-
-        SQLiteDatabase db = dbHelper.getReadableDatabase();
-
-        String sql = "SELECT c.id, c.name, p.phone " +
-            "FROM contacts c " +
-            "JOIN contact_phones p ON c.id = p.contact_id " +
-            "WHERE p.phone LIKE ? " +
-            "ORDER BY c.name ASC";
-
-        String[] selectionArgs = new String[] { "%" + term.trim() + "%" };
-
-        Cursor cursor = db.rawQuery(sql, selectionArgs);
-
-        if (cursor != null) {
-            while (cursor.moveToNext()) {
-                long id = cursor.getLong(cursor.getColumnIndexOrThrow("id"));
-                String name = cursor.getString(cursor.getColumnIndexOrThrow("name"));
-                String phone = cursor.getString(cursor.getColumnIndexOrThrow("phone"));
-
-                Search s = searchMap.get(id);
-                if (s == null) {
-                    s = new Search(id, name);
-                    searchMap.put(id, s);
-                }
-
-                s.getResult().add(phone);
+            Search s = searchMap.get(id);
+            if (s == null) {
+                s = new Search(id, name);
+                searchMap.put(id, s);
             }
-            cursor.close();
+
+            s.getResult().add(phone);
         }
 
         return new ArrayList<>(searchMap.values());
@@ -107,9 +80,11 @@ public class SearchService {
         } else {
             List<Contact> rs = contactDao.getAllFiltered(term);
             for(Contact r: rs) {
+                Log.d(SearchService.class.toString(), "id : "+ r.getId()+ ", name :"+ r.getName());
                 result.add(new Search(r.getId(), r.getName())); 
             }
         }
+        result.sort((a,b)-> {return a.getName().compareToIgnoreCase(b.getName());});
         return result;
 
     }

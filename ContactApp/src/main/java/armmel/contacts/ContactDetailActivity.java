@@ -1,4 +1,6 @@
 package armmel.contacts;
+import armmel.contacts.database.dao.ContactPhoneDao;
+import armmel.contacts.database.repository.ContactRepository;
 import armmel.contacts.utils.ThemeUtils;
 import android.os.Bundle;
 import android.view.ViewGroup;
@@ -12,10 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 import android.app.Activity;
 import armmel.contacts.database.dao.ContactDao;
-import armmel.contacts.database.dao.ContactPhoneDao;
 import armmel.contacts.database.dao.ContactEmailDao;
 import armmel.contacts.database.dao.ContactAddressDao;
-import armmel.contacts.database.dao.ContactPhoneDao;
 import armmel.contacts.database.dao.ContactPhotoDao;
 import armmel.contacts.database.entity.Contact;
 import armmel.contacts.database.entity.ContactPhone;
@@ -55,7 +55,7 @@ public class ContactDetailActivity extends Activity {
     private ImageButton addEmail; 
     private ImageButton addAddress; 
     private ImageView imgPhoto;
-    private ContactDao contactDao;
+    private ContactRepository contactRepository;
     private ContactPhoneDao phoneDao;
     private ContactEmailDao emailDao;
     private ContactAddressDao addressDao;
@@ -126,13 +126,13 @@ public class ContactDetailActivity extends Activity {
             });
         });
 
-        contactDao = new ContactDao(this);
-        phoneDao = new ContactPhoneDao(this);
-        emailDao = new ContactEmailDao(this);
-        addressDao = new ContactAddressDao(this);
-        photoDao = new ContactPhotoDao(this);
+        contactRepository = new ContactRepository(this);
+        phoneDao = contactRepository.createDaoWriteable(ContactPhoneDao.class);
+        emailDao = contactRepository.createDaoWriteable(ContactEmailDao.class);
+        addressDao = contactRepository.createDaoWriteable(ContactAddressDao.class);
+        photoDao = contactRepository.createDaoWriteable(ContactPhotoDao.class);
 
-        Contact contact = contactDao.getById(contactId);
+        Contact contact = contactRepository.getById(contactId);
         if (contact == null) {
             Toast.makeText(this, "Contact not found", Toast.LENGTH_SHORT).show();
             finish();
@@ -155,7 +155,7 @@ public class ContactDetailActivity extends Activity {
                     if (!newName.isEmpty()) {
                         txtName.setText(newName);
                         contact.setName(newName);
-                        contactDao.update(contact);
+                        contactRepository.update(contact);
                     } else {
                         Toast.makeText(this, "Name cannot be empty", Toast.LENGTH_SHORT).show();
                     }
@@ -171,7 +171,7 @@ public class ContactDetailActivity extends Activity {
                 .setMessage("Are you sure you want to delete this contact?")
                 .setPositiveButton("Yes", (dialog, which) -> {
                     // Delete from DB
-                    contactDao.delete(contact.getId());
+                    contactRepository.delete(contact.getId());
 
 
                     // Close detail and return to MainActivity

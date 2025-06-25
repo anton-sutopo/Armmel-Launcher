@@ -1,9 +1,17 @@
 package armmel.contacts.database.entity;
 
+import armmel.contacts.orm.Column;
+import armmel.contacts.orm.Entity;
+
+@Entity(table = "contact_photos")
 public class ContactPhoto {
+    @Column(name= "id", id = true)
     private int id;
+    @Column(name= "contact_id")
     private Long contactId;
+    @Column(name= "photo")
     private byte[] photo;
+    @Column(name= "mime_type")
     private String mimeType;
 
     public int getId() { return id; }
