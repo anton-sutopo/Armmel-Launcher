@@ -1,16 +1,17 @@
 package armmel.contacts.utils;
 import android.content.Context;
 import android.util.Base64;
-import armmel.contacts.database.dao.ContactAddressDao;
-import armmel.contacts.database.dao.ContactDao;
 import armmel.contacts.database.dao.ContactEmailDao;
+import armmel.contacts.database.dao.ContactAddressDao;
 import armmel.contacts.database.dao.ContactPhoneDao;
 import armmel.contacts.database.dao.ContactPhotoDao;
+import armmel.contacts.database.repository.ContactRepository;
 import armmel.contacts.database.entity.Contact;
 import armmel.contacts.database.entity.ContactAddress;
 import armmel.contacts.database.entity.ContactEmail;
 import armmel.contacts.database.entity.ContactPhone;
 import armmel.contacts.database.entity.ContactPhoto;
+import armmel.contacts.orm.DaoFactory;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -21,7 +22,7 @@ import java.util.TimeZone;
 
 public class VcfExporter {
     private final Context context;
-    private final ContactDao contactDao;
+    private final ContactRepository contactRepository;
     private final ContactPhoneDao contactPhoneDao;
     private final ContactEmailDao contactEmailDao;
     private final ContactAddressDao contactAddressDao;
@@ -32,16 +33,16 @@ public class VcfExporter {
 
     public VcfExporter(Context context) {
         this.context = context;
-        this.contactDao = new ContactDao(context);
-        this.contactPhoneDao = new ContactPhoneDao(context);
-        this.contactEmailDao = new ContactEmailDao(context);
-        this.contactAddressDao = new ContactAddressDao(context);
-        this.contactPhotoDao = new ContactPhotoDao(context);
+        this.contactRepository = new ContactRepository(context);
+        this.contactPhoneDao =  contactRepository.createDaoWriteable(ContactPhoneDao.class);// new ContactPhoneDao(context);
+        this.contactEmailDao = contactRepository.createDaoWriteable(ContactEmailDao.class);
+        this.contactAddressDao = contactRepository.createDaoWriteable(ContactAddressDao.class);
+        this.contactPhotoDao = contactRepository.createDaoWriteable(ContactPhotoDao.class);
     }
 
     public String exportToVcf(VCardVersion version) {
         StringBuilder writer = new StringBuilder();
-        List<Contact> contacts = contactDao.getAllFiltered("");
+        List<Contact> contacts = contactRepository.getAllFiltered("");
         for (Contact contact : contacts) {
             StringBuilder vCard = new StringBuilder();
             vCard.append("BEGIN:VCARD\n");

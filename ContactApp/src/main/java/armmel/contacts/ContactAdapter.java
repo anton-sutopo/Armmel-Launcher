@@ -74,7 +74,7 @@ public class ContactAdapter extends BaseAdapter {
     public void updateData(String keyword) {
         List<Search> filtered = searchService.getAllFiltered(keyword);
         this.keyword = keyword.startsWith("@")? keyword.substring(1): keyword;
-        this.keyword = Utils.isPartialPhoneNumber(this.keyword)? Utils.removeForPhone(this.keyword): keyword;
+        this.keyword = Utils.isPartialPhoneNumber(this.keyword)? Utils.removeForPhone(this.keyword): this.keyword;
         contacts.clear();
         contacts.addAll(filtered);
         notifyDataSetChanged();

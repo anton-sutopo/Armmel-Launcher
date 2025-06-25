@@ -1,11 +1,20 @@
 package armmel.contacts.database.entity;
+import armmel.contacts.orm.Column;
+import armmel.contacts.orm.Entity;
 import java.util.List;
 import java.util.ArrayList;
+
+@Entity(table = "contacts")
 public class Contact {
+    @Column(name= "id", id = true)
     private Long id;
+    @Column(name= "name")
     private String name;
+    @Column(name= "org")
     private String org;
+    @Column(name= "title")
     private String title;
+    @Column(name= "created_at")
     private String createdAt;
     private List<ContactPhone> phones;
     private List<ContactEmail> emails;
@@ -21,7 +30,6 @@ public class Contact {
         this.title = title;
         this.createdAt = createdAt;
     }
-
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

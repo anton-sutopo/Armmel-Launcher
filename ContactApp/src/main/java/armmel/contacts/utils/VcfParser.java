@@ -12,16 +12,6 @@ import armmel.contacts.database.entity.ContactAddress;
 import armmel.contacts.database.entity.ContactPhoto;
 public class VcfParser {
 
-    /*public static class VcfContact {
-      public String fullName;
-      public String organization;
-      public String title;
-      public List<String> phones = new ArrayList<>();
-      public List<String> emails = new ArrayList<>();
-      public List<String> addresses = new ArrayList<>();
-      public byte[] photoBytes;
-      public String photoMimeType;
-      }*/
 
     public static List<Contact> parse(InputStream inputStream) throws Exception {
         List<Contact> contacts = new ArrayList<>();

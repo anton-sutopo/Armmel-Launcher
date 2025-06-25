@@ -1,9 +1,17 @@
 package armmel.contacts.database.entity;
 
+import armmel.contacts.orm.Column;
+import armmel.contacts.orm.Entity;
+
+@Entity(table="contact_addresses")
 public class ContactAddress implements ContactDetail{
+    @Column(name= "id", id = true)
     private int id;
+    @Column(name= "contact_id")
     private Long contactId;
+    @Column(name= "address")
     private String address;
+    @Column(name= "type")
     private String type;
 
     @Override
