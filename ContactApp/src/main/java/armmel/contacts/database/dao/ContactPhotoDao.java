@@ -6,17 +6,18 @@ import armmel.contacts.orm.Insert;
 import armmel.contacts.orm.Param;
 import armmel.contacts.orm.Query;
 import armmel.contacts.orm.Update;
-import java.util.List;
+
 @Dao
 public interface ContactPhotoDao {
-    @Insert
-    long insert(ContactPhoto contactPhone);
-    @Update
-    int  update(ContactPhoto contactPhone);
-    
-    @Query("DELETE FROM contact_photos WHERE id = :id")
-    int delete(@Param("id") int id);
+  @Insert
+  long insert(ContactPhoto contactPhone);
 
-    @Query("SELECT * FROM contact_photos WHERE contact_id = :contactId")  
-    public ContactPhoto getByContactId(@Param("contactId") Long contactId);
+  @Update
+  int update(ContactPhoto contactPhone);
+
+  @Query("DELETE FROM contact_photos WHERE id = :id")
+  int delete(@Param("id") int id);
+
+  @Query("SELECT * FROM contact_photos WHERE contact_id = :contactId")
+  public ContactPhoto getByContactId(@Param("contactId") Long contactId);
 }

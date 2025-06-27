@@ -7,16 +7,18 @@ import armmel.contacts.orm.Param;
 import armmel.contacts.orm.Query;
 import armmel.contacts.orm.Update;
 import java.util.List;
+
 @Dao
 public interface ContactPhoneDao {
-    @Insert
-    long insert(ContactPhone contactPhone);
-    @Update
-    int  update(ContactPhone contactPhone);
-    
-    @Query("DELETE FROM contact_phones WHERE id = :id")
-    int delete(@Param("id") int id);
+  @Insert
+  long insert(ContactPhone contactPhone);
 
-    @Query("SELECT * FROM contact_phones WHERE contact_id = :contactId")  
-    public List<ContactPhone> getByContactId(@Param("contactId") Long contactId);
+  @Update
+  int update(ContactPhone contactPhone);
+
+  @Query("DELETE FROM contact_phones WHERE id = :id")
+  int delete(@Param("id") int id);
+
+  @Query("SELECT * FROM contact_phones WHERE contact_id = :contactId")
+  public List<ContactPhone> getByContactId(@Param("contactId") Long contactId);
 }
