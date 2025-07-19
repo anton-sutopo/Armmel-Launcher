@@ -18,6 +18,6 @@
 */
 -->
 <resources>
-    <color name="main_color">#FFFFFFFF</color>
-    <color name="white">#FF000000</color>
+    <color name="main_color">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
 </resources>

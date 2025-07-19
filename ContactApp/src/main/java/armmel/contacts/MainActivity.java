@@ -20,6 +20,7 @@ import armmel.contacts.database.repository.ContactRepository;
 import armmel.contacts.dto.Search;
 import armmel.contacts.dto.SearchService;
 import armmel.contacts.utils.ThemeUtils;
+import armmel.contacts.utils.Utils;
 import armmel.contacts.utils.VcfExporter;
 import armmel.contacts.utils.VcfParser;
 import java.io.IOException;
@@ -187,7 +188,7 @@ public class MainActivity extends Activity {
             "Save",
             (dialog, which) -> {
               String name = editName.getText().toString().trim();
-              if (!name.isEmpty()) {
+              if (!Utils.isEmpty(name)) {
 
                 long contactId = contactDao.insertContact(name);
                 openDetailActivity(contactId);

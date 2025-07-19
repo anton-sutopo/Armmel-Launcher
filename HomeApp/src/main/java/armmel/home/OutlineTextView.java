@@ -32,6 +32,7 @@ public class OutlineTextView extends View {
 
     float textSize = 0;
     int textColor = context.getColor(R.color.main_color);
+    int textBackColor = context.getColor(R.color.white);
     text = "";
     if (attrs != null) {
       @SuppressLint("CustomViewStyleable")
@@ -39,6 +40,7 @@ public class OutlineTextView extends View {
       textSize =
           a.getDimensionPixelSize(R.styleable.StickerTextAttrs_textSize, dpToPx(context, 12));
       textColor = a.getColor(R.styleable.StickerTextAttrs_textColor, textColor);
+      textBackColor = a.getColor(R.styleable.StickerTextAttrs_textBackColor, textBackColor);
       text = a.getString(R.styleable.StickerTextAttrs_text);
       a.recycle();
     }
@@ -49,7 +51,7 @@ public class OutlineTextView extends View {
     TEXT_PAINT.setColor(textColor);
     TEXT_PAINT.setTextAlign(Paint.Align.CENTER);
 
-    int smallBorderSize = dpToPx(context, 3);
+    int smallBorderSize = dpToPx(context, 2);
     bigBorderSize = smallBorderSize * 3;
     halfMargin = bigBorderSize / 2;
 
@@ -57,7 +59,7 @@ public class OutlineTextView extends View {
     WHITE_BORDER_PAINT.setTextSize(textSize);
     WHITE_BORDER_PAINT.setStyle(Paint.Style.STROKE);
     WHITE_BORDER_PAINT.setStrokeWidth(smallBorderSize);
-    WHITE_BORDER_PAINT.setColor(context.getColor(R.color.white));
+    WHITE_BORDER_PAINT.setColor(textBackColor);
     WHITE_BORDER_PAINT.setTextAlign(Paint.Align.CENTER);
     /*BROWN_BORDER_PAINT = new Paint();
     BROWN_BORDER_PAINT.setTextSize(textSize);
