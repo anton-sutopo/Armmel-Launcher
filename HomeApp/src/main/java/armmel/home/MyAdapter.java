@@ -4,14 +4,18 @@ import android.content.Intent;
 import android.content.pm.LauncherApps;
 import android.content.pm.LauncherApps.ShortcutQuery;
 import android.content.pm.ShortcutInfo;
-import android.graphics.drawable.Drawable;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Process;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.AdapterView;
+import android.widget.ListView;
+import android.widget.PopupWindow;
 import android.widget.Toast;
 import armmel.library.PagerAdapter;
 import java.util.ArrayList;
@@ -76,7 +80,7 @@ public class MyAdapter extends PagerAdapter {
                 Utils.writeProperties(context, p, "armel.properties", "showall reload");
                 context.loadApplications(false, false);
               } else {
-                openShortcut(app);
+                openShortcut(app, v);
               }
               MyAdapter.this.notifyDataSetChanged();
             }
@@ -122,30 +126,45 @@ public class MyAdapter extends PagerAdapter {
     }
   }
 
-  private void openShortcut(ApplicationInfo application) {
-    if (launcherapps.hasShortcutHostPermission() && application != null) {
-      IconPack ipack = new IconPack();
-      ShortcutQuery sq = new LauncherApps.ShortcutQuery();
-      sq.setQueryFlags(
-          ShortcutQuery.FLAG_MATCH_DYNAMIC
-              + ShortcutQuery.FLAG_MATCH_MANIFEST
-              + ShortcutQuery.FLAG_MATCH_PINNED);
-      sq.setPackage(application.getPackageName());
-      List<ShortcutInfo> si = launcherapps.getShortcuts(sq, Process.myUserHandle());
-      for (ShortcutInfo sia : si) {
-        ApplicationInfo applicationChild = new ApplicationInfo(context);
-        applicationChild.setIsShortcut(true);
-        applicationChild.setShortcutInfo(sia);
-        applicationChild.title = sia.getShortLabel().toString();
-        Drawable d =
-            launcherapps.getShortcutIconDrawable(
-                sia, context.getResources().getDisplayMetrics().densityDpi);
-        if (d != null)
-          applicationChild.icon =
-              ipack.getIcon(context, context.getResources(), sia.getPackage(), sia.getPackage(), d);
-      }
+  private void openShortcut(ApplicationInfo app, View anchorView) {
+    if (!launcherapps.hasShortcutHostPermission() || app == null) return;
+
+    ShortcutQuery sq = new LauncherApps.ShortcutQuery();
+    sq.setQueryFlags(
+        ShortcutQuery.FLAG_MATCH_DYNAMIC
+            | ShortcutQuery.FLAG_MATCH_MANIFEST
+            | ShortcutQuery.FLAG_MATCH_PINNED);
+    sq.setPackage(app.getPackageName());
+
+    List<ShortcutInfo> shortcuts = launcherapps.getShortcuts(sq, Process.myUserHandle());
+    if (shortcuts == null || shortcuts.isEmpty()) {
+      Toast.makeText(context, "No shortcuts found", Toast.LENGTH_SHORT).show();
+      return;
     }
-    Toast.makeText(context, "open ShortcutList", Toast.LENGTH_LONG).show();
+
+    ListView listView = new ListView(context);
+    ShortcutAdapter adapter = new ShortcutAdapter(context, shortcuts, launcherapps);
+    listView.setAdapter(adapter);
+
+    // Fixed width (in pixels)
+    int width = (int) (200 * context.getResources().getDisplayMetrics().density);
+
+    final PopupWindow popup =
+        new PopupWindow(listView, width, WindowManager.LayoutParams.WRAP_CONTENT, true);
+    popup.setOutsideTouchable(true);
+    popup.setFocusable(true);
+    popup.setBackgroundDrawable(
+        new ColorDrawable(Color.WHITE)); // Required to dismiss on outside touch
+
+    listView.setOnItemClickListener(
+        (parent, view, position, id) -> {
+          ShortcutInfo selected = shortcuts.get(position);
+          launcherapps.startShortcut(
+              selected.getPackage(), selected.getId(), null, null, Process.myUserHandle());
+          popup.dismiss();
+        });
+
+    popup.showAsDropDown(anchorView);
   }
 
   @Override
