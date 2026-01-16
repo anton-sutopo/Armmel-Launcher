@@ -61,8 +61,7 @@ public class MyAdapter extends PagerAdapter {
   public Object instantiateItem(ViewGroup container, int position) {
     LayoutInflater inflater = LayoutInflater.from(context);
     if (position != 0) {
-      ViewGroup layout = (ViewGroup) inflater.inflate(R.layout.main, null);
-      container.addView(layout);
+      ViewGroup layout = (ViewGroup) inflater.inflate(R.layout.main, container, false);
       GridLayout gridView = (GridLayout) layout.findViewById(R.id.gridView1);
       gridView.setAdapter(
           new ApplicationAdapter(
@@ -72,7 +71,9 @@ public class MyAdapter extends PagerAdapter {
             @Override
             public void onDoubleClick(AdapterView<?> parent, View v, int position) {
               ApplicationInfo app = (ApplicationInfo) parent.getItemAtPosition(position);
-              if (app.isShowAll) {
+              if (app.isProperties) {
+                context.openFilePicker();
+              } else if (app.isShowAll) {
                 context.loadApplications(false, true);
               } else if (app.isReload) {
                 Properties p = Utils.loadProperties(context, "armel.properties");
@@ -88,14 +89,19 @@ public class MyAdapter extends PagerAdapter {
             public void onSingleClick(AdapterView<?> parent, View v, int position) {
               ApplicationInfo app = (ApplicationInfo) parent.getItemAtPosition(position);
               if (!app.isShortcut()) {
-                context.startActivity(app.intent);
+                if (app.getUserHandle() != null) { // work profile
+                  launcherapps.startMainActivity(
+                      app.getComponentName(), app.getUserHandle(), null, null);
+                } else {
+                  context.startActivity(app.intent); // personal profile
+                }
               } else {
                 launcherapps.startShortcut(
                     app.getShortcutInfo().getPackage(),
                     app.getShortcutInfo().getId(),
                     null,
                     null,
-                    Process.myUserHandle());
+                    app.getUserHandle() != null ? app.getUserHandle() : Process.myUserHandle());
               }
             }
           });
@@ -120,6 +126,7 @@ public class MyAdapter extends PagerAdapter {
             }
           });
       gridView.setLongClickable(true);
+      container.addView(layout);
       return layout;
     } else {
       return null;

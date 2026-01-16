@@ -30,12 +30,12 @@ android {
         defaultConfig { 
             versionCode 20 
                 versionName 'Arm Home'
-                minSdkVersion 28
-                targetSdkVersion 29
+                minSdkVersion 29
+                targetSdkVersion 35
 
         }
 
-    compileSdkVersion 'android-29'
+    compileSdkVersion 'android-35'
         compileOptions {
             sourceCompatibility 1.8
                 targetCompatibility 1.8

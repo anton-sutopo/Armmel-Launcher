@@ -11,6 +11,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
@@ -32,6 +33,7 @@ public class CustomImageView extends View {
   Rect bounds = new Rect();
   private Bitmap d;
   private Context context;
+  private int userHashCode;
 
   public CustomImageView(Context context) {
     super(context);
@@ -54,6 +56,21 @@ public class CustomImageView extends View {
     paint.setAntiAlias(true);
     paint.setFilterBitmap(true);
     paint.setDither(true);
+  }
+
+  private int getUserHashColor(int hash) {
+    switch (hash % 4) { // example for 4 colors
+      case 0:
+        return Color.RED;
+      case 1:
+        return Color.BLUE;
+      case 2:
+        return Color.GREEN;
+      case 3:
+        return Color.MAGENTA;
+      default:
+        return Color.GRAY;
+    }
   }
 
   @Override
@@ -134,6 +151,18 @@ public class CustomImageView extends View {
       canvas.drawText(s[1], (canvas.getWidth()) / 2, yPos, paint);
       paint.setTypeface(f);
     }
+    if (userHashCode > 0) {
+      int size = IconPack.dpToPx(12, context.getResources()); // box size in pixels
+      int padding = IconPack.dpToPx(4, context.getResources()); // distance from edge
+
+      // Define the rectangle
+      RectF rect =
+          new RectF(getWidth() - size - padding, padding, getWidth() - padding, size + padding);
+
+      paint.setColor(getUserHashColor(userHashCode));
+      paint.setStyle(Paint.Style.FILL);
+      canvas.drawRoundRect(rect, 4, 4, paint); // rounded corners
+    }
   }
 
   public void setClock(boolean clock) {
@@ -158,6 +187,10 @@ public class CustomImageView extends View {
     // String time = String.format("%02d", c.get(Calendar.HOUR)) + ":" + String.format("%02d",
     // c.get(Calendar.MINUTE));
     this.clockText = date;
+  }
+
+  public void setUserHash(int userHash) {
+    this.userHashCode = userHash;
   }
 
   public void setImage(Bitmap d) {

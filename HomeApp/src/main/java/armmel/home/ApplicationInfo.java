@@ -19,6 +19,7 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.ShortcutInfo;
 import android.graphics.Bitmap;
+import android.os.UserHandle;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
@@ -33,6 +34,7 @@ class ApplicationInfo {
   public static final String CLOCK = "clock";
   public static final String SHOWALL = "showall";
   public static final String RELOAD = "reload";
+  public static final String PROPERTIES = "properties";
 
   /** The application name. */
   CharSequence title;
@@ -48,6 +50,7 @@ class ApplicationInfo {
   boolean isSystem = false;
   boolean isShowAll = false;
   boolean isReload = false;
+  boolean isProperties = false;
   private boolean isShortcut = false;
   private boolean calendar = false;
   private boolean clock = false;
@@ -55,6 +58,8 @@ class ApplicationInfo {
   private ShortcutInfo shortcutInfo;
   private ArrayList<ApplicationInfo> childList = new ArrayList<>();
   private String packageName;
+  private UserHandle userhandle;
+  private ComponentName componentName;
 
   /** When set to true, indicates that the icon has been resized. */
   boolean filtered;
@@ -132,6 +137,23 @@ class ApplicationInfo {
     this.isShowAll = condition.equalsIgnoreCase(SHOWALL);
     this.isReload = condition.equalsIgnoreCase(RELOAD);
     this.clock = condition.equalsIgnoreCase(CLOCK);
+    this.isProperties = condition.equalsIgnoreCase(PROPERTIES);
+  }
+
+  public ComponentName getComponentName() {
+    return componentName;
+  }
+
+  public void setComponentName(ComponentName componentName) {
+    this.componentName = componentName;
+  }
+
+  public UserHandle getUserHandle() {
+    return userhandle;
+  }
+
+  public void setUserHandle(UserHandle userhandle) {
+    this.userhandle = userhandle;
   }
 
   public boolean isClock() {

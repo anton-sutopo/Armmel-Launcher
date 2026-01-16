@@ -7,12 +7,22 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.LauncherActivityInfo;
 import android.content.pm.LauncherApps;
 import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
+import android.os.UserHandle;
+import android.os.UserManager;
+import android.view.View;
+import android.view.WindowInsets;
+import android.widget.Toast;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -28,23 +38,49 @@ public class MainActivity extends Activity {
   protected static ArrayList<ApplicationInfo> mApplications;
   private static final String LOG_TAG = "Home";
   ViewPagerD view = null;
-  protected final int appCount = 6 * 5;
+  protected final int appCount = GridLayout.numRows * GridLayout.numColumns;
   MyAdapter myAdapter = null;
+  protected LauncherApps launcherApps;
   private BroadcastReceiver br;
   private BroadcastReceiver tm;
-  //    private BroadcastReceiver notif;
   CustomImageView clock;
   CustomImageView calendar;
-  //    ConcurrentHashMap<String, Maps> mapping;
   public final int MY_PERMISSIONS_REQUEST_READ_MEDIA = 01;
 
   public MainActivity() {}
+
+  private static final int PICK_PROPERTIES_FILE = 101;
+
+  public void openFilePicker() {
+    Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+    intent.setType("*/*"); // or "text/plain"
+    startActivityForResult(intent, PICK_PROPERTIES_FILE);
+  }
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
+
+    View rootView = findViewById(R.id.root);
+    rootView.setOnApplyWindowInsetsListener(
+        new View.OnApplyWindowInsetsListener() {
+          @Override
+          public WindowInsets onApplyWindowInsets(View v, WindowInsets insets) {
+
+            // Get system bar insets
+            int statusBarHeight = insets.getInsets(WindowInsets.Type.statusBars()).top;
+            int navBarHeight = insets.getInsets(WindowInsets.Type.navigationBars()).bottom;
+
+            // Apply padding to root layout
+            v.setPadding(v.getPaddingLeft(), statusBarHeight, v.getPaddingRight(), navBarHeight);
+
+            return insets; // must return insets
+          }
+        });
+
     view = (ViewPagerD) findViewById(R.id.viewPager);
+
     processPermission();
     br =
         new BroadcastReceiver() {
@@ -135,17 +171,7 @@ public class MainActivity extends Activity {
     return "";
   }
 
-  /*private void loadApplications(boolean isLaunching, boolean showNo) {
-  if(isLaunching && mApplications != null) {
-  return;
-  }
-  PackageManager manager = getPackageManager();
-  List<android.content.pm.ApplicationInfo> packages = manager.getInstalledApplications(PackageManager.GET_META_DATA);
-  for (android.content.pm.ApplicationInfo app : packages) {
-  Log.i(LOG_TAG, "packages: "+ app.packageName);
-  }
-  }*/
-  protected void loadApplications(boolean isLaunching, boolean showNo) {
+  /*  protected void loadApplications(boolean isLaunching, boolean showNo) {
     if (isLaunching && mApplications != null) {
       return;
     }
@@ -201,7 +227,12 @@ public class MainActivity extends Activity {
         ApplicationInfo application = new ApplicationInfo(this);
         application.setIsShortcut(false);
         application.setPackageName(info.activityInfo.packageName);
-        application.setCondition(condition);
+        if (info.activityInfo.packageName.equalsIgnoreCase("com.android.settings")
+            && Utils.isStringEmpty(condition)) {
+          application.setCondition(ApplicationInfo.PROPERTIES);
+        } else {
+          application.setCondition(condition);
+        }
         application.title = !label.isEmpty() ? label : info.loadLabel(manager);
         application.isSystem =
             (info.activityInfo.applicationInfo.flags
@@ -230,6 +261,105 @@ public class MainActivity extends Activity {
           });
       Utils.writeProperties(this, p, "armel.properties", "showAll Reload");
     }
+  }*/
+  protected void loadApplications(boolean isLaunching, boolean showNo) {
+    if (isLaunching && mApplications != null) {
+      return;
+    }
+    if (myAdapter == null) {
+      LauncherApps launcherApps = (LauncherApps) getSystemService(Context.LAUNCHER_APPS_SERVICE);
+      myAdapter = new MyAdapter(this, launcherApps);
+    }
+
+    // PackageManager for personal profile fallback
+    PackageManager manager = getPackageManager();
+
+    // Load properties
+    Properties p = Utils.loadProperties(this, "armel.properties");
+    String theme = p.getProperty("theme");
+    IconPack ipack = new IconPack((theme != null ? theme : ""), manager);
+
+    if (mApplications == null) {
+      mApplications = new ArrayList<>();
+    }
+    mApplications.clear();
+
+    // --- NEW: get apps from all profiles ---
+    UserManager userManager = (UserManager) getSystemService(Context.USER_SERVICE);
+    launcherApps = myAdapter.launcherapps;
+    List<UserHandle> profiles = userManager.getUserProfiles();
+
+    for (UserHandle user : profiles) {
+      List<LauncherActivityInfo> apps = launcherApps.getActivityList(null, user);
+
+      for (LauncherActivityInfo info : apps) {
+        String packageName = info.getApplicationInfo().packageName;
+        ComponentName componentName = info.getComponentName();
+        String className =
+            stripComponent(componentName.toString())
+                + ((user != null) ? "_" + user.hashCode() : "_personal");
+
+        String stat = p.getProperty(className);
+        boolean isShow = true;
+        String label = "";
+        String condition = "";
+        if (stat == null) {
+          p.put(className, "Yes");
+        } else {
+          String[] statPart = stat.split(";");
+          isShow = statPart[0].equalsIgnoreCase("Yes");
+          switch (statPart.length) {
+            case 2:
+              condition = statPart[1];
+              break;
+            case 3:
+              condition = statPart[1];
+              label = statPart[2];
+              break;
+            default:
+          }
+        }
+        if (!isShow && !showNo) continue;
+
+        ApplicationInfo application = new ApplicationInfo(this);
+        application.setIsShortcut(false);
+        application.setPackageName(packageName);
+
+        if (packageName.equalsIgnoreCase("com.android.settings")
+            && Utils.isStringEmpty(condition)) {
+          application.setCondition(ApplicationInfo.PROPERTIES);
+        } else {
+          application.setCondition(condition);
+        }
+        application.setComponentName(componentName);
+        application.setUserHandle(user);
+        application.title = !label.isEmpty() ? label : info.getLabel();
+        application.isSystem =
+            (info.getApplicationInfo().flags & android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0;
+        application.setActivity(
+            componentName,
+            Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+
+        Bitmap icon = ipack.getBitmap(this, className);
+        application.icon =
+            icon != null
+                ? icon
+                : ipack.getIcon(
+                    this,
+                    getResources(),
+                    className,
+                    componentName.toString(),
+                    info.getIcon(0)); // default icon
+
+        mApplications.add(application);
+      }
+    }
+
+    // Sort applications
+    mApplications.sort((a, b) -> ((String) a.title).compareToIgnoreCase((String) b.title));
+
+    // Save updated properties
+    Utils.writeProperties(this, p, "armel.properties", "showAll Reload");
   }
 
   @Override
@@ -245,5 +375,36 @@ public class MainActivity extends Activity {
     view.setCurrentItem(0);
     // super.onBackPressed(); //To change body of generated methods, choose Tools | Templates.
 
+  }
+
+  private void copyFileToAppDir(Uri sourceUri) {
+    File destFile = new File(getExternalFilesDir("/"), "armel.properties");
+
+    try (InputStream in = getContentResolver().openInputStream(sourceUri);
+        OutputStream out = new FileOutputStream(destFile)) {
+
+      byte[] buffer = new byte[4096];
+      int read;
+      while ((read = in.read(buffer)) != -1) {
+        out.write(buffer, 0, read);
+      }
+
+      Toast.makeText(this, "File uploaded successfully!", Toast.LENGTH_SHORT).show();
+      loadApplications(false);
+    } catch (IOException e) {
+      e.printStackTrace();
+      Toast.makeText(this, "Failed to upload file", Toast.LENGTH_SHORT).show();
+    }
+  }
+
+  @Override
+  protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    super.onActivityResult(requestCode, resultCode, data);
+    if (requestCode == PICK_PROPERTIES_FILE && resultCode == RESULT_OK) {
+      Uri uri = data.getData();
+      if (uri != null) {
+        copyFileToAppDir(uri);
+      }
+    }
   }
 }

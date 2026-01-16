@@ -40,19 +40,17 @@ public class ApplicationAdapter extends ArrayAdapter<ApplicationInfo> {
               ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
     }
     Bitmap icon = info.icon;
+    CustomImageView iv = (CustomImageView) convertView.findViewById(R.id.icon_image);
+    iv.setUserHash(info.getUserHandle().hashCode());
     if (info.isCalendar()) {
-      CustomImageView iv = (CustomImageView) convertView.findViewById(R.id.icon_image);
-      // iv.setImageDrawable(icon);
       iv.setImageResource(R.drawable.ios);
       context.calendar = iv;
       iv.setCalendar(true);
     } else if (info.isClock()) {
-      CustomImageView iv = (CustomImageView) convertView.findViewById(R.id.icon_image);
       iv.setImageResource(R.drawable.clock);
       context.clock = iv;
       iv.setClock(true);
     } else {
-      final CustomImageView iv = (CustomImageView) convertView.findViewById(R.id.icon_image);
       iv.setImage(icon);
     }
     final OutlineTextView textView = (OutlineTextView) convertView.findViewById(R.id.icon_text);
