@@ -8,6 +8,8 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.view.View;
+import java.util.ArrayList;
+import java.util.List;
 
 public class OutlineTextView extends View {
   private final Paint TEXT_PAINT;
@@ -99,51 +101,86 @@ public class OutlineTextView extends View {
   @Override
   protected void onDraw(Canvas canvas) {
     super.onDraw(canvas);
+    float maxWidth =
+        getWidth() - getPaddingLeft() - getPaddingRight() - WHITE_BORDER_PAINT.getStrokeWidth() * 2;
     int x = getWidth() / 2;
-    int y = (int) (TEXT_PAINT.descent() - TEXT_PAINT.ascent());
-    int maxWidth = (getWidth() / charwidth);
-    for (String line : wrap(text, "\n", maxWidth)) {
+    int y = getPaddingTop() - (int) TEXT_PAINT.ascent();
+    int lineHeight = (int) (TEXT_PAINT.descent() - TEXT_PAINT.ascent());
+
+    for (String line : wrapLauncherText(TEXT_PAINT, text, maxWidth)) {
       canvas.drawText(line, x, y, WHITE_BORDER_PAINT);
       canvas.drawText(line, x, y, TEXT_PAINT);
-      y += TEXT_PAINT.descent() - TEXT_PAINT.ascent();
+      y += lineHeight;
     }
   }
 
-  public static final String[] wrap(String toWrap, String wrapKey, int maxLineLength) {
-    // Handle null inputs
-    if (toWrap == null || wrapKey == null || maxLineLength <= 0) {
-      throw new IllegalArgumentException("Invalid input");
-    }
+  public static String[] wrapLauncherText(Paint paint, String text, float maxWidth) {
+    if (text == null) return new String[0];
 
-    StringBuilder result = new StringBuilder();
-    String[] words = toWrap.split(" ");
+    List<String> lines = new ArrayList<>();
+    StringBuilder line = new StringBuilder();
 
-    int currentLineLength = 0;
-    for (String word : words) {
+    int lastBreak = -1; // best break position
+    int lastBreakType = 0; // 1=space, 2=camel, 3=digit
 
-      // Manual wrapping
-      if (word.contains(wrapKey)) {
-        word = word.replace(wrapKey, "\n"); // Replace all occurrences
-        result.append(word).append(" ");
-        currentLineLength = 0;
-        continue; // Avoid auto-wrapping
+    for (int i = 0; i < text.length(); i++) {
+      char c = text.charAt(i);
+
+      // Hard break
+      if (c == '\n') {
+        lines.add(line.toString());
+        line.setLength(0);
+        lastBreak = -1;
+        lastBreakType = 0;
+        continue;
       }
 
-      // Auto wrapping
-      if (currentLineLength + word.length() + 1 <= maxLineLength) {
-        if (currentLineLength > 0) { // Add space if not the first word on the line
-          result.append(" ");
+      // Detect break BEFORE appending current char
+      if (i > 0) {
+        char prev = text.charAt(i - 1);
+
+        if (c == ' ') {
+          lastBreak = line.length();
+          lastBreakType = 1;
+        } else if (Character.isLowerCase(prev) && Character.isUpperCase(c)) {
+          lastBreak = line.length();
+          lastBreakType = 2;
+        } else if (Character.isLetter(prev) && Character.isDigit(c)) {
+          lastBreak = line.length();
+          lastBreakType = 3;
         }
-        result.append(word);
-        currentLineLength += word.length() + 1;
-      } else {
-        result.append("\n").append(word);
-        currentLineLength = word.length() + 1;
+      }
+
+      line.append(c);
+
+      if (paint.measureText(line.toString()) > maxWidth) {
+        if (lastBreak >= 0) {
+          lines.add(line.substring(0, lastBreak));
+          line.delete(0, lastBreak);
+
+          // trim leading space after wrap
+          if (line.length() > 0 && line.charAt(0) == ' ') {
+            line.deleteCharAt(0);
+          }
+        } else {
+          // hard wrap fallback
+          char last = line.charAt(line.length() - 1);
+          line.setLength(line.length() - 1);
+          if (line.length() > 0) lines.add(line.toString());
+          line.setLength(0);
+          line.append(last);
+        }
+
+        lastBreak = -1;
+        lastBreakType = 0;
       }
     }
 
-    // Convert the result to an array by splitting on newline characters
-    return result.toString().trim().split("\n");
+    if (line.length() > 0) {
+      lines.add(line.toString());
+    }
+
+    return lines.toArray(new String[0]);
   }
 
   public static int dpToPx(Context context, float dp) {
