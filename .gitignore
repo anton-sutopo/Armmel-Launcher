@@ -4,3 +4,10 @@ HomeApp/**/.classpath
 KeyBoardApp/**/.classpath
 contacts/**/.classpath
 .gradle/**
+# Vim swap / temp files
+*.swp
+*.swo
+*.swn
+*.swm
+*~
+
