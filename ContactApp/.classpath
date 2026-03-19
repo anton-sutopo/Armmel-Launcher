@@ -2,16 +2,16 @@
 <classpath>
 	<classpathentry kind="src" path="src/main/java"/>
 	<classpathentry kind="lib" path="/home/sutopo/android/platforms/android-29/android.jar"/>
-	<classpathentry kind="lib" path="/home/sutopo/project/Home/ContactApp/build/intermediates/compile_app_classes_jar/release/bundleReleaseClassesToCompileJar/classes.jar"/>
-	<classpathentry kind="lib" path="/home/sutopo/project/Home/ContactApp/build/intermediates/javac/releaseUnitTest/classes"/>
-	<classpathentry kind="lib" path="/home/sutopo/project/Home/ContactApp/build/intermediates/compile_app_classes_jar/debug/bundleDebugClassesToCompileJar/classes.jar"/>
-	<classpathentry kind="lib" path="/home/sutopo/project/Home/ContactApp/build/intermediates/javac/debugUnitTest/classes"/>
-	<classpathentry kind="lib" path="/home/sutopo/project/Home/ContactApp/build/intermediates/javac/debugAndroidTest/classes"/>
-	<classpathentry kind="lib" path="/home/sutopo/project/Home/ContactApp/build/intermediates/javac/release/classes"/>
-	<classpathentry kind="lib" path="/home/sutopo/project/Home/ContactApp/build/intermediates/javac/debug/classes"/>
+	<classpathentry kind="lib" path="/home/sutopo/project/Armmel-Launcher/ContactApp/build/intermediates/compile_app_classes_jar/release/bundleReleaseClassesToCompileJar/classes.jar"/>
+	<classpathentry kind="lib" path="/home/sutopo/project/Armmel-Launcher/ContactApp/build/intermediates/javac/releaseUnitTest/classes"/>
+	<classpathentry kind="lib" path="/home/sutopo/project/Armmel-Launcher/ContactApp/build/intermediates/compile_app_classes_jar/debug/bundleDebugClassesToCompileJar/classes.jar"/>
+	<classpathentry kind="lib" path="/home/sutopo/project/Armmel-Launcher/ContactApp/build/intermediates/javac/debugUnitTest/classes"/>
+	<classpathentry kind="lib" path="/home/sutopo/project/Armmel-Launcher/ContactApp/build/intermediates/javac/debugAndroidTest/classes"/>
+	<classpathentry kind="lib" path="/home/sutopo/project/Armmel-Launcher/ContactApp/build/intermediates/javac/release/classes"/>
+	<classpathentry kind="lib" path="/home/sutopo/project/Armmel-Launcher/ContactApp/build/intermediates/javac/debug/classes"/>
 	<classpathentry kind="lib" path="/home/sutopo/android/build-tools/34.0.0/core-lambda-stubs.jar"/>
-	<classpathentry kind="lib" path="/home/sutopo/project/Home/ContactApp/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/release/processReleaseResources/R.jar"/>
-	<classpathentry kind="lib" path="/home/sutopo/project/Home/ContactApp/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/debug/processDebugResources/R.jar"/>
-	<classpathentry kind="lib" path="/home/sutopo/project/Home/ContactApp/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/debugAndroidTest/processDebugAndroidTestResources/R.jar"/>
+	<classpathentry kind="lib" path="/home/sutopo/project/Armmel-Launcher/ContactApp/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/release/processReleaseResources/R.jar"/>
+	<classpathentry kind="lib" path="/home/sutopo/project/Armmel-Launcher/ContactApp/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/debug/processDebugResources/R.jar"/>
+	<classpathentry kind="lib" path="/home/sutopo/project/Armmel-Launcher/ContactApp/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/debugAndroidTest/processDebugAndroidTestResources/R.jar"/>
 	<classpathentry kind="lib" path="."/>
 </classpath>

@@ -1,7 +1,6 @@
 package armmel.home;
 
 import android.graphics.Bitmap;
-import android.graphics.Rect;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,14 +8,11 @@ import android.widget.ArrayAdapter;
 import java.util.ArrayList;
 
 public class ApplicationAdapter extends ArrayAdapter<ApplicationInfo> {
-
   private final MainActivity context;
   private final ArrayList<ApplicationInfo> mobileValues;
-  private final Rect mOldBounds = new Rect();
   public final int startPos;
 
   public ApplicationAdapter(MainActivity context, ArrayList<ApplicationInfo> apps, int startPos) {
-
     super(context, 0, apps);
     this.context = context;
     this.mobileValues = apps;
