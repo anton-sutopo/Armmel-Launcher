@@ -185,6 +185,46 @@ public class ViewPager extends ViewGroup {
   private EdgeEffect mLeftEdge;
   private EdgeEffect mRightEdge;
 
+  // Renderer helper for edge effects and page margins
+  ViewPagerEdgeRenderer mEdgeRenderer;
+
+  // Package-private accessors used by ViewPagerEdgeRenderer to avoid widening field visibility
+  EdgeEffect getLeftEdge() {
+    return mLeftEdge;
+  }
+
+  EdgeEffect getRightEdge() {
+    return mRightEdge;
+  }
+
+  float getFirstOffset() {
+    return mFirstOffset;
+  }
+
+  float getLastOffset() {
+    return mLastOffset;
+  }
+
+  Drawable getMarginDrawable() {
+    return mMarginDrawable;
+  }
+
+  int getPageMargin() {
+    return mPageMargin;
+  }
+
+  java.util.ArrayList<ItemInfo> getItems() {
+    return mItems;
+  }
+
+  int getTopPageBounds() {
+    return mTopPageBounds;
+  }
+
+  int getBottomPageBounds() {
+    return mBottomPageBounds;
+  }
+
   private boolean mFirstLayout = true;
   private boolean mNeedCalculatePageOffsets = false;
   private boolean mCalledSuper;
@@ -303,6 +343,9 @@ public class ViewPager extends ViewGroup {
     mFlingDistance = (int) (MIN_DISTANCE_FOR_FLING * density);
     mCloseEnough = (int) (CLOSE_ENOUGH * density);
     mDefaultGutterSize = (int) (DEFAULT_GUTTER_SIZE * density);
+
+    // Edge/renderer helper
+    mEdgeRenderer = new ViewPagerEdgeRenderer(this);
 
     this.setAccessibilityDelegate(new ViewPagerAccessibilityDelegate(this));
 
@@ -1809,8 +1852,14 @@ public class ViewPager extends ViewGroup {
   }
 
   private boolean edgeEffectOnRelase(EdgeEffect ee) {
+    // keep to preserve existing behavior for callers inside ViewPager
     ee.onRelease();
     return ee.isFinished();
+  }
+
+  private boolean edgeEffectOnPull(EdgeEffect ee, float deltaDistance) {
+    ee.onPull(deltaDistance);
+    return true;
   }
 
   private boolean performDrag(float x) {
@@ -1933,87 +1982,16 @@ public class ViewPager extends ViewGroup {
   @Override
   public void draw(Canvas canvas) {
     super.draw(canvas);
-    boolean needsInvalidate = false;
-
-    final int overScrollMode = this.getOverScrollMode();
-    if (overScrollMode == View.OVER_SCROLL_ALWAYS
-        || (overScrollMode == View.OVER_SCROLL_IF_CONTENT_SCROLLS
-            && mAdapter != null
-            && mAdapter.getCount() > 1)) {
-      if (!mLeftEdge.isFinished()) {
-        final int restoreCount = canvas.save();
-        final int height = getHeight() - getPaddingTop() - getPaddingBottom();
-        final int width = getWidth();
-
-        canvas.rotate(270);
-        canvas.translate(-height + getPaddingTop(), mFirstOffset * width);
-        mLeftEdge.setSize(height, width);
-        needsInvalidate |= mLeftEdge.draw(canvas);
-        canvas.restoreToCount(restoreCount);
-      }
-      if (!mRightEdge.isFinished()) {
-        final int restoreCount = canvas.save();
-        final int width = getWidth();
-        final int height = getHeight() - getPaddingTop() - getPaddingBottom();
-
-        canvas.rotate(90);
-        canvas.translate(-getPaddingTop(), -(mLastOffset + 1) * width);
-        mRightEdge.setSize(height, width);
-        needsInvalidate |= mRightEdge.draw(canvas);
-        canvas.restoreToCount(restoreCount);
-      }
-    } else {
-      mLeftEdge.finish();
-      mRightEdge.finish();
-    }
-
-    if (needsInvalidate) {
-      // Keep animating
-      this.postInvalidateOnAnimation();
+    if (mEdgeRenderer != null) {
+      mEdgeRenderer.drawEdges(canvas);
     }
   }
 
   @Override
   protected void onDraw(Canvas canvas) {
     super.onDraw(canvas);
-
-    // Draw the margin drawable between pages if needed.
-    if (mPageMargin > 0 && mMarginDrawable != null && mItems.size() > 0 && mAdapter != null) {
-      final int scrollX = getScrollX();
-      final int width = getWidth();
-
-      final float marginOffset = (float) mPageMargin / width;
-      int itemIndex = 0;
-      ItemInfo ii = mItems.get(0);
-      float offset = ii.offset;
-      final int itemCount = mItems.size();
-      final int firstPos = ii.position;
-      final int lastPos = mItems.get(itemCount - 1).position;
-      for (int pos = firstPos; pos < lastPos; pos++) {
-        while (pos > ii.position && itemIndex < itemCount) {
-          ii = mItems.get(++itemIndex);
-        }
-
-        float drawAt;
-        if (pos == ii.position) {
-          drawAt = (ii.offset + ii.widthFactor) * width;
-          offset = ii.offset + ii.widthFactor + marginOffset;
-        } else {
-          float widthFactor = mAdapter.getPageWidth(pos);
-          drawAt = (offset + widthFactor) * width;
-          offset += widthFactor + marginOffset;
-        }
-
-        if (drawAt + mPageMargin > scrollX) {
-          mMarginDrawable.setBounds(
-              (int) drawAt, mTopPageBounds, (int) (drawAt + mPageMargin + 0.5f), mBottomPageBounds);
-          mMarginDrawable.draw(canvas);
-        }
-
-        if (drawAt > scrollX + width) {
-          break; // No more visible, no sense in continuing
-        }
-      }
+    if (mEdgeRenderer != null) {
+      mEdgeRenderer.drawPageMargins(canvas);
     }
   }
 
