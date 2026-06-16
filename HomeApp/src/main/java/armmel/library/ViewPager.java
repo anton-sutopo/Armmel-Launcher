@@ -602,15 +602,6 @@ public class ViewPager extends ViewGroup {
   }
 
   /**
-   * Return the margin between pages.
-   *
-   * @return The size of the margin in pixels
-   */
-  public int getPageMargin() {
-    return mPageMargin;
-  }
-
-  /**
    * Set a drawable that will be used to fill the margin between pages.
    *
    * @param d Drawable to display between pages
@@ -628,7 +619,7 @@ public class ViewPager extends ViewGroup {
    * @param resId Resource ID of a drawable to display between pages
    */
   public void setPageMarginDrawable(int resId) {
-    setPageMarginDrawable(getContext().getResources().getDrawable(resId));
+  setPageMarginDrawable(getContext().getResources().getDrawable(resId, getContext().getTheme()));
   }
 
   @Override
@@ -1907,11 +1898,6 @@ public class ViewPager extends ViewGroup {
     pageScrolled((int) scrollX);
 
     return needsInvalidate;
-  }
-
-  private boolean edgeEffectOnPull(EdgeEffect ee, float deltaDistance) {
-    ee.onPull(deltaDistance);
-    return true;
   }
 
   /**

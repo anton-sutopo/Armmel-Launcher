@@ -115,7 +115,7 @@ public class IconPack {
     int id = iconPackRes.getIdentifier(drawableName, "drawable", iconPackage);
 
     if (id > 0) {
-      Drawable bitmap = iconPackRes.getDrawable(id);
+      Drawable bitmap = iconPackRes.getDrawable(id, null);
       return convertToBitmap(bitmap, bitmap.getIntrinsicWidth(), bitmap.getIntrinsicHeight());
       // if (bitmap instanceof BitmapDrawable)
     }
