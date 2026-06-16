@@ -1,25 +1,7 @@
-buildscript { 
-    repositories { 
-        mavenCentral()	
-            google()
+apply plugin: 'com.android.application'
 
-    } 
-
-    dependencies 
-    { 
-        classpath 'com.android.tools.build:gradle:4.2.+' 
-    } 
-} 
-
-apply plugin: 'android'
-
-dependencies { 
-    repositories { 
-        mavenCentral()	
-            google()
-    }
-
-    implementation fileTree(dir: 'libs', include: '*.jar')
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
 
 }
 
@@ -35,17 +17,26 @@ android {
 
         }
 
-    compileSdkVersion 'android-29'
+    compileSdkVersion 35
         compileOptions {
-            sourceCompatibility 1.8
-                targetCompatibility 1.8
+            sourceCompatibility JavaVersion.VERSION_1_8
+            targetCompatibility JavaVersion.VERSION_1_8
         }
+    def keystoreProps = new Properties()
+    def keystoreFile = rootProject.file("keystore.properties")
+    if (keystoreFile.exists()) {
+        keystoreProps.load(new FileInputStream(keystoreFile))
+    }
     signingConfigs {
         release {
-            storeFile file("/home/sutopo/project/arm-release.keystore")
-                storePassword "***REDACTED***"
-                keyAlias "armkey"
-                keyPassword "***REDACTED***"
+            if (keystoreProps['storeFile']) {
+                storeFile file(keystoreProps['storeFile'])
+            } else if (System.getenv("RELEASE_STORE_FILE")) {
+                storeFile file(System.getenv("RELEASE_STORE_FILE"))
+            }
+            storePassword keystoreProps['storePassword "***REDACTED***"RELEASE_STORE_PASSWORD")
+            keyAlias keystoreProps['keyAlias'] ?: System.getenv("RELEASE_KEY_ALIAS")
+            keyPassword keystoreProps['keyPassword "***REDACTED***"RELEASE_KEY_PASSWORD")
         }
     }
 

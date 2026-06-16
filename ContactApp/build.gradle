@@ -2,11 +2,6 @@ plugins {
     id 'com.android.application'
 }
 
-repositories {
-    google()
-    mavenCentral()
-}
-
 android {
     namespace 'armmel.contacts'
     compileSdk 35
@@ -24,12 +19,21 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
 
+    def keystoreProps = new Properties()
+    def keystoreFile = rootProject.file("keystore.properties")
+    if (keystoreFile.exists()) {
+        keystoreProps.load(new FileInputStream(keystoreFile))
+    }
     signingConfigs {
         release {
-            storeFile file("/home/sutopo/project/arm-release.keystore")
-                storePassword "***REDACTED***"
-                keyAlias "armkey"
-                keyPassword "***REDACTED***"
+            if (keystoreProps['storeFile']) {
+                storeFile file(keystoreProps['storeFile'])
+            } else if (System.getenv("RELEASE_STORE_FILE")) {
+                storeFile file(System.getenv("RELEASE_STORE_FILE"))
+            }
+            storePassword keystoreProps['storePassword "***REDACTED***"RELEASE_STORE_PASSWORD")
+            keyAlias keystoreProps['keyAlias'] ?: System.getenv("RELEASE_KEY_ALIAS")
+            keyPassword keystoreProps['keyPassword "***REDACTED***"RELEASE_KEY_PASSWORD")
         }
     }
 

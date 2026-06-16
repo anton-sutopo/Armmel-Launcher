@@ -11,3 +11,8 @@ contacts/**/.classpath
 *.swm
 *~
 
+# Ignore keystore and signing properties
+keystore.properties
+*.keystore
+
+
