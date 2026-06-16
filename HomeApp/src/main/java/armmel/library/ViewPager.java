@@ -304,7 +304,7 @@ public class ViewPager extends ViewGroup {
     mCloseEnough = (int) (CLOSE_ENOUGH * density);
     mDefaultGutterSize = (int) (DEFAULT_GUTTER_SIZE * density);
 
-    this.setAccessibilityDelegate(new MyAccessibilityDelegate());
+    this.setAccessibilityDelegate(new ViewPagerAccessibilityDelegate(this));
 
     if (this.getImportantForAccessibility() == View.IMPORTANT_FOR_ACCESSIBILITY_AUTO) {
       this.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
@@ -347,7 +347,7 @@ public class ViewPager extends ViewGroup {
 
     if (mAdapter != null) {
       if (mObserver == null) {
-        mObserver = new PagerObserver();
+        mObserver = new PagerObserver(this);
       }
       mAdapter.registerDataSetObserver(mObserver);
       mPopulatePending = false;
@@ -2487,65 +2487,7 @@ public class ViewPager extends ViewGroup {
     return new LayoutParams(getContext(), attrs);
   }
 
-  class MyAccessibilityDelegate extends AccessibilityDelegate {
 
-    @Override
-    public void onInitializeAccessibilityEvent(View host, AccessibilityEvent event) {
-      super.onInitializeAccessibilityEvent(host, event);
-      event.setClassName(ViewPager.class.getName());
-    }
-
-    @Override
-    public void onInitializeAccessibilityNodeInfo(View host, AccessibilityNodeInfo info) {
-      super.onInitializeAccessibilityNodeInfo(host, info);
-      info.setClassName(ViewPager.class.getName());
-      info.setScrollable(mAdapter != null && mAdapter.getCount() > 1);
-      if (mAdapter != null && mCurItem >= 0 && mCurItem < mAdapter.getCount() - 1) {
-        info.addAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD);
-      }
-      if (mAdapter != null && mCurItem > 0 && mCurItem < mAdapter.getCount()) {
-        info.addAction(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD);
-      }
-    }
-
-    @Override
-    public boolean performAccessibilityAction(View host, int action, Bundle args) {
-      if (super.performAccessibilityAction(host, action, args)) {
-        return true;
-      }
-      switch (action) {
-        case AccessibilityNodeInfo.ACTION_SCROLL_FORWARD:
-          {
-            if (mAdapter != null && mCurItem >= 0 && mCurItem < mAdapter.getCount() - 1) {
-              setCurrentItem(mCurItem + 1);
-              return true;
-            }
-          }
-          return false;
-        case AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD:
-          {
-            if (mAdapter != null && mCurItem > 0 && mCurItem < mAdapter.getCount()) {
-              setCurrentItem(mCurItem - 1);
-              return true;
-            }
-          }
-          return false;
-      }
-      return false;
-    }
-  }
-
-  private class PagerObserver extends DataSetObserver {
-    @Override
-    public void onChanged() {
-      dataSetChanged();
-    }
-
-    @Override
-    public void onInvalidated() {
-      dataSetChanged();
-    }
-  }
 
   /** Layout parameters that should be supplied for views added to a ViewPager. */
   public static class LayoutParams extends ViewGroup.LayoutParams {
