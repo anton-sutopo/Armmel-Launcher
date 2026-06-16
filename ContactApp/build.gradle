@@ -1,45 +1,29 @@
-buildscript { 
-    repositories { 
-        mavenCentral()	
-            google()
-
-    } 
-
-    dependencies 
-    { 
-        classpath 'com.android.tools.build:gradle:4.2.+' 
-    } 
-} 
-
-apply plugin: 'android'
-
-dependencies { 
-    repositories { 
-        mavenCentral()	
-            google()
-    }
-
-    implementation fileTree(dir: 'libs', include: '*.jar')
-
+plugins {
+    id 'com.android.application'
 }
 
-/*Gets the version name from the latest Git tag */ 
+repositories {
+    google()
+    mavenCentral()
+}
 
-android { 
+android {
     namespace 'armmel.contacts'
-        defaultConfig { 
-            versionCode 20 
-                versionName 'Contact'
-                minSdkVersion 28
-                targetSdkVersion 35
+    compileSdk 35
 
-        }
+    defaultConfig {
+        applicationId "armmel.contacts"
+        minSdk 28
+        targetSdk 35
+        versionCode 20
+        versionName "Contact"
+    }
 
-    compileSdkVersion 'android-29'
-        compileOptions {
-            sourceCompatibility 1.8
-                targetCompatibility 1.8
-        }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
     signingConfigs {
         release {
             storeFile file("/home/sutopo/project/arm-release.keystore")
@@ -53,10 +37,20 @@ android {
         debug {
             zipAlignEnabled true
         }
+
         release {
             signingConfig signingConfigs.release
         }
     }
+  lint {
+	baseline = file("lint-baseline.xml")
+ 	abortOnError true
+        warningsAsErrors true
+        checkReleaseBuilds true
+    }
+}
 
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
 }
 
