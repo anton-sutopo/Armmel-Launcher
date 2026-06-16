@@ -1,6 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" >
     <application android:label="@string/ime_name" android:icon="@drawable/icon">
-        <service android:name="LittleBigKeyboard"
+        <service android:name=".LittleBigKeyboard"
+                android:exported="true"
                 android:permission="android.permission.BIND_INPUT_METHOD">
             <intent-filter>
                 <action android:name="android.view.InputMethod" />
