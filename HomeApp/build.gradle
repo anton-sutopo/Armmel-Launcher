@@ -52,9 +52,15 @@ android {
     buildTypes {
         debug {
             zipAlignEnabled true
+            // Keep minification off for debug builds to preserve stack traces
+            minifyEnabled false
         }
         release {
             signingConfig signingConfigs.release
+            // Enable code shrinking (R8/ProGuard) and resource shrinking for smaller APKs
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 
