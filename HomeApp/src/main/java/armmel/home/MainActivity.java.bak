@@ -29,10 +29,12 @@ import java.util.Locale;
 import java.util.Properties;
 
 public class MainActivity extends Activity {
+  // public static int width;
 
   public static int height;
   public static final String CLEAR = "arm.home.clear";
   public static final String ADD = "arm.home.add";
+  // private static boolean mWallpaperChecked;
   protected ArrayList<ApplicationInfo> mApplications;
   private static final String LOG_TAG = "Home";
   ViewPagerD view = null;
@@ -92,6 +94,7 @@ public class MainActivity extends Activity {
         new BroadcastReceiver() {
           @Override
           public void onReceive(Context context, Intent intent) {
+            // Toast.makeText(MainActivity.this, "ticked", Toast.LENGTH_LONG).show();
             /*if (clock != null) {
             clock.setClock(true);
             clock.invalidate();
@@ -151,6 +154,7 @@ public class MainActivity extends Activity {
     }
     view.setAdapter(myAdapter);
     myAdapter.notifyDataSetChanged();
+    // setDefaultWallpaper();
 
   }
 
@@ -269,6 +273,7 @@ public class MainActivity extends Activity {
 
   @Override
   protected void onDestroy() {
+    //        unregisterReceiver(notif);
     unregisterReceiver(tm);
     unregisterReceiver(br);
     super.onDestroy(); // To change body of generated methods, choose Tools | Templates.
@@ -277,6 +282,7 @@ public class MainActivity extends Activity {
   @Override
   public void onBackPressed() {
     view.setCurrentItem(0);
+    // super.onBackPressed(); //To change body of generated methods, choose Tools | Templates.
 
   }
 

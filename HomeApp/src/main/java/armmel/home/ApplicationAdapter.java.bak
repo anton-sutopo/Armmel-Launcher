@@ -24,6 +24,9 @@ public class ApplicationAdapter extends ArrayAdapter<ApplicationInfo> {
     this.startPos = startPos;
   }
 
+  //	public ApplicationAdapter(Context context, String[] mobileValues) {
+  //		this.context = context;
+  //		this.mobileValues = mobileValues;
   //	}
   @Override
   public View getView(int position, View convertView, ViewGroup parent) {

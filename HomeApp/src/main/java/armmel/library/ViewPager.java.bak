@@ -736,6 +736,7 @@ public class ViewPager extends ViewGroup {
     Collections.sort(mItems, COMPARATOR);
 
     if (needPopulate) {
+      // Reset our known page widths; populate will recompute them.
       final int childCount = getChildCount();
       for (int i = 0; i < childCount; i++) {
         final View child = getChildAt(i);
@@ -767,6 +768,7 @@ public class ViewPager extends ViewGroup {
 
     // Bail now if we are waiting to populate.  This is to hold off
     // on creating views from the time the user releases their finger to
+    // fling to a new position until we have finished the scroll to
     // that position, avoiding glitches from happening at that point.
     if (mPopulatePending) {
       if (DEBUG) Log.i(TAG, "populate is pending, skipping for now...");
@@ -1255,6 +1257,7 @@ public class ViewPager extends ViewGroup {
 
       scrollTo(newOffsetPixels, getScrollY());
       if (!mScroller.isFinished()) {
+        // We now return to your regularly scheduled scroll, already in progress.
         final int newDuration = mScroller.getDuration() - mScroller.timePassed();
         ItemInfo targetInfo = infoForPosition(mCurItem);
         mScroller.startScroll(
@@ -1707,6 +1710,7 @@ public class ViewPager extends ViewGroup {
     }
 
     if (mAdapter == null || mAdapter.getCount() == 0) {
+      // Nothing to present or scroll; nothing to touch.
       return false;
     }
 
@@ -2302,8 +2306,10 @@ public class ViewPager extends ViewGroup {
         }
       }
     } else if (direction == FOCUS_LEFT || direction == FOCUS_BACKWARD) {
+      // Trying to move left and nothing there; try to page.
       handled = pageLeft();
     } else if (direction == FOCUS_RIGHT || direction == FOCUS_FORWARD) {
+      // Trying to move right and nothing there; try to page.
       handled = pageRight();
     }
     if (handled) {

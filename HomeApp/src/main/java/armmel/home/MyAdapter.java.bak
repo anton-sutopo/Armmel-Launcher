@@ -55,6 +55,7 @@ public class MyAdapter extends PagerAdapter {
   @Override
   public int getItemPosition(Object object) {
     return POSITION_NONE;
+    // return super.getItemPosition(object); //To change body of generated methods, choose Tools |
     // Templates.
   }
 
@@ -122,6 +123,7 @@ public class MyAdapter extends PagerAdapter {
                 Toast.makeText(context, app.title + " is system app.", Toast.LENGTH_LONG).show();
               }
               return true;
+              // throw new UnsupportedOperationException("Not supported yet."); //To change body of
               // generated methods, choose Tools | Templates.
             }
           });

@@ -118,6 +118,7 @@ public class IconPack {
       Drawable bitmap = iconPackRes.getDrawable(id);
       return convertToBitmap(bitmap, bitmap.getIntrinsicWidth(), bitmap.getIntrinsicHeight());
       // if (bitmap instanceof BitmapDrawable)
+      //    return ((BitmapDrawable)bitmap).getBitmap();
     }
     return null;
   }
@@ -208,6 +209,7 @@ public class IconPack {
   }
 
   private Bitmap generateBitmap(Bitmap defaultBitmap) {
+    // if no support images in the icon pack return the bitmap itself
     if (mBackImages.size() == 0) return defaultBitmap;
 
     Random r = new Random();
