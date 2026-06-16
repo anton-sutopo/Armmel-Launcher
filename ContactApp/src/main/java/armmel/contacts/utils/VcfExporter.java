@@ -2,6 +2,7 @@ package armmel.contacts.utils;
 
 import android.content.Context;
 import android.util.Base64;
+import android.util.Log;
 import armmel.contacts.database.dao.ContactAddressDao;
 import armmel.contacts.database.dao.ContactEmailDao;
 import armmel.contacts.database.dao.ContactPhoneDao;
@@ -127,6 +128,7 @@ public class VcfExporter {
       utcFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
       return utcFormat.format(localFormat.parse(localDateTime));
     } catch (Exception e) {
+      Log.w("VcfExporter", "Failed to parse date: " + localDateTime, e);
       return "19700101T000000Z"; // fallback
     }
   }

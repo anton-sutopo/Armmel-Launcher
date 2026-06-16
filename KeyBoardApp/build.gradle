@@ -31,7 +31,7 @@ android {
             versionCode 20 
                 versionName 'Arm Keyboard'
                 minSdkVersion 28
-                targetSdkVersion 29
+                targetSdkVersion 35
 
         }
 

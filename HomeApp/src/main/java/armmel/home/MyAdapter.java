@@ -34,15 +34,17 @@ public class MyAdapter extends PagerAdapter {
 
   @Override
   public int getCount() {
-    return (int) Math.ceil((double) MainActivity.mApplications.size() / context.appCount) + 1;
+    int size = context.mApplications != null ? context.mApplications.size() : 0;
+    return (int) Math.ceil((double) size / context.appCount) + 1;
   }
 
   private ArrayList<ApplicationInfo> getArrayByPosition(int position) {
     ArrayList<ApplicationInfo> result = new ArrayList<ApplicationInfo>();
     int y = position * context.appCount;
+    int size = context.mApplications != null ? context.mApplications.size() : 0;
     for (int i = 0; i < context.appCount; i++) {
-      if (i + y < MainActivity.mApplications.size()) {
-        result.add(MainActivity.mApplications.get(i + y));
+      if (i + y < size) {
+        result.add(context.mApplications.get(i + y));
       } else {
         break;
       }

@@ -2,6 +2,7 @@ package armmel.contacts.orm;
 
 import android.content.ContentValues;
 import android.database.Cursor;
+import android.util.Log;
 import java.lang.reflect.Field;
 
 public class OrmUtils {
@@ -43,12 +44,12 @@ public class OrmUtils {
   }
 
   public static String getTableNameFromQuery(String query) {
-    System.out.println("query" + query);
+    Log.d("OrmUtils", "query" + query);
     String upper = query.toUpperCase();
     if (upper.contains(" FROM ")) {
       String[] parts = upper.split(" FROM ");
       String[] afterFrom = parts[1].trim().split("[ \n\r\t]");
-      System.out.println("tableName: " + afterFrom[0]);
+      Log.d("OrmUtils", "tableName: " + afterFrom[0]);
       return afterFrom[0];
     }
     throw new IllegalArgumentException("Cannot extract table from query: " + query);

@@ -35,7 +35,7 @@ public class MainActivity extends Activity {
   public static final String CLEAR = "arm.home.clear";
   public static final String ADD = "arm.home.add";
   // private static boolean mWallpaperChecked;
-  protected static ArrayList<ApplicationInfo> mApplications;
+  protected ArrayList<ApplicationInfo> mApplications;
   private static final String LOG_TAG = "Home";
   ViewPagerD view = null;
   protected final int appCount = GridLayout.numRows * GridLayout.numColumns;

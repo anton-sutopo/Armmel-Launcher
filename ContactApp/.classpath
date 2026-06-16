@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src/main/java"/>
-	<classpathentry kind="lib" path="/home/sutopo/android/platforms/android-29/android.jar"/>
+	<classpathentry kind="lib" path="/home/sutopo/android/platforms/android-35/android.jar"/>
 	<classpathentry kind="lib" path="/home/sutopo/project/Armmel-Launcher/ContactApp/build/intermediates/compile_app_classes_jar/release/bundleReleaseClassesToCompileJar/classes.jar"/>
 	<classpathentry kind="lib" path="/home/sutopo/project/Armmel-Launcher/ContactApp/build/intermediates/javac/releaseUnitTest/classes"/>
 	<classpathentry kind="lib" path="/home/sutopo/project/Armmel-Launcher/ContactApp/build/intermediates/compile_app_classes_jar/debug/bundleDebugClassesToCompileJar/classes.jar"/>

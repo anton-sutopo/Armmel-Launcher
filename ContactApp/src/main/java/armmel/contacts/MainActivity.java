@@ -93,6 +93,8 @@ public class MainActivity extends Activity {
           }
           contactAdapter.updateData(""); // Re-fetch current data
         } catch (Exception e) {
+          Log.e(TAG, "Failed to import vCard", e);
+          Toast.makeText(this, "Failed to import vCard", Toast.LENGTH_SHORT).show();
         }
       }
     } else if (requestCode == CREATE_VCF_FILE_REQUEST_CODE
