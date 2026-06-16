@@ -43,15 +43,15 @@ public class MainActivity extends Activity {
   private BroadcastReceiver tm;
   CustomImageView clock;
   CustomImageView calendar;
-  public final int MY_PERMISSIONS_REQUEST_READ_MEDIA = 01;
 
   public MainActivity() {}
 
   private static final int PICK_PROPERTIES_FILE = 101;
 
   public void openFilePicker() {
-    Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+    Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
     intent.setType("*/*"); // or "text/plain"
+    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
     startActivityForResult(intent, PICK_PROPERTIES_FILE);
   }
 
@@ -79,7 +79,7 @@ public class MainActivity extends Activity {
 
     view = (ViewPagerD) findViewById(R.id.viewPager);
 
-    processPermission();
+    loadApplications(true);
     br =
         new BroadcastReceiver() {
           @Override
@@ -113,26 +113,7 @@ public class MainActivity extends Activity {
     registerReceiver(tm, timeFilter);
   }
 
-  private boolean processPermission() {
-    int permissionCheck = this.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE);
-    if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
-      loadApplications(true);
-    } else {
-      this.requestPermissions(
-          new String[] {Manifest.permission.WRITE_EXTERNAL_STORAGE},
-          MY_PERMISSIONS_REQUEST_READ_MEDIA);
-    }
-    return true;
-  }
 
-  @Override
-  public void onRequestPermissionsResult(int resultCode, String[] permissions, int[] grantResults) {
-    if (resultCode == MY_PERMISSIONS_REQUEST_READ_MEDIA) {
-      if (grantResults.length > 0) {
-        loadApplications(true);
-      }
-    }
-  }
 
   @Override
   protected void onResume() {
@@ -306,6 +287,11 @@ public class MainActivity extends Activity {
     if (requestCode == PICK_PROPERTIES_FILE && resultCode == RESULT_OK) {
       Uri uri = data.getData();
       if (uri != null) {
+        try {
+          getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        } catch (Exception e) {
+          // some providers don't allow persistable permissions; ignore
+        }
         copyFileToAppDir(uri);
       }
     }
