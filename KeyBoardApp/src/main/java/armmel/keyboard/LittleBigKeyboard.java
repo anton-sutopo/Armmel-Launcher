@@ -120,10 +120,15 @@ public class LittleBigKeyboard extends InputMethodService
     if (DEBUG) {
       Log.d(TAG, "onCreateInputView()");
     }
-    mInputView = (ModKeyboardView) getLayoutInflater().inflate(R.layout.input, null);
+    View rootView = getLayoutInflater().inflate(R.layout.input, null);
+    mInputView = (ModKeyboardView) rootView.findViewById(R.id.keyboard);
     mInputView.setTheme(isDark());
     mInputView.setOnKeyboardActionListener(this);
-    return mInputView;
+    
+    // Set back disposition to ensure keyboard appears above navigation bar
+    setBackDisposition(BACK_DISPOSITION_DEFAULT);
+    
+    return rootView;
   }
 
   /**

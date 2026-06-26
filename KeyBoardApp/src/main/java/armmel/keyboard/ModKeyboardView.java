@@ -106,6 +106,12 @@ public class ModKeyboardView extends View implements View.OnClickListener {
 
     private Rect mPadding = new Rect(0, 0, 0, 0);
 
+    /** Offset for centering the keyboard horizontally */
+    private int mKeyboardOffsetX = 0;
+    
+    /** The constrained width of the keyboard (max 370dp) */
+    private int mKeyboardWidth = 0;
+
     private static final int MSG_REPEAT = 3;
     private static final int REPEAT_INTERVAL = 60; // ~16 keys per second
     private static final int REPEAT_START_DELAY = 400;
@@ -266,10 +272,16 @@ public class ModKeyboardView extends View implements View.OnClickListener {
         int desiredDp = 370; // max width we want
         int desiredPx = dpToPx(desiredDp, getResources());
 
-        int width = MeasureSpec.getSize(widthMeasureSpec);
-        width = Math.min(width, desiredPx);
+        int availableWidth = MeasureSpec.getSize(widthMeasureSpec);
+        mKeyboardWidth = Math.min(availableWidth, desiredPx);
+        
+        // Calculate offset to center the keyboard
+        mKeyboardOffsetX = (availableWidth - mKeyboardWidth) / 2;
 
-        setMeasuredDimension(width, mKeyboard.getHeight() + getPaddingTop() + getPaddingBottom());
+        // Resize the keyboard to fit the constrained width
+        mKeyboard.resize(mKeyboardWidth, mKeyboard.getHeight());
+
+        setMeasuredDimension(availableWidth, mKeyboard.getHeight() + getPaddingTop() + getPaddingBottom());
         mKeyboardChanged = true;
     }
 
@@ -312,16 +324,16 @@ public class ModKeyboardView extends View implements View.OnClickListener {
         if (mDrawPending || mBuffer == null || mKeyboardChanged) {
             drawAllKeys();
         }
-        canvas.drawBitmap(mBuffer, 0, 0, null);
+        canvas.drawBitmap(mBuffer, mKeyboardOffsetX, 0, null);
     }
 
     private void drawAllKeys() {
         if (mBuffer == null || mKeyboardChanged) {
             if (mBuffer == null
                     || mKeyboardChanged
-                    && (mBuffer.getWidth() != getWidth() || mBuffer.getHeight() != getHeight())) {
+                    && (mBuffer.getWidth() != mKeyboardWidth || mBuffer.getHeight() != getHeight())) {
                 // Make sure our bitmap is at least 1x1
-                final int width = Math.max(1, getWidth());
+                final int width = Math.max(1, mKeyboardWidth);
                 final int height = Math.max(1, getHeight());
                 mBuffer = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
                 mCanvas = new Canvas(mBuffer);
@@ -329,7 +341,7 @@ public class ModKeyboardView extends View implements View.OnClickListener {
             mKeyboardChanged = false;
         }
         final Canvas canvas = mCanvas;
-        mDirtyRect.union(0, 0, getWidth(), getHeight());
+        mDirtyRect.union(0, 0, mKeyboardWidth, getHeight());
         canvas.save();
         canvas.clipRect(mDirtyRect);
 
@@ -349,7 +361,8 @@ public class ModKeyboardView extends View implements View.OnClickListener {
                         context.getTheme());
             oldDarkStatus = isDark;
         }
-        bg.setBounds(canvas.getClipBounds());
+        // Set background bounds to respect the keyboard width constraint
+        bg.setBounds(0, 0, mKeyboardWidth, getHeight());
         bg.draw(canvas);
 
         for (int i = 0; i < mKeys.length; i++) {
@@ -482,7 +495,7 @@ public class ModKeyboardView extends View implements View.OnClickListener {
         final int action = me.getAction();
         boolean result = false;
         //        final long now = me.getEventTime();
-        int touchX = (int) me.getX() - getPaddingLeft();
+        int touchX = (int) me.getX() - getPaddingLeft() - mKeyboardOffsetX;
         int touchY = (int) me.getY() - getPaddingTop() + VERTICAL_CORRECTION;
 
         if (action == MotionEvent.ACTION_DOWN) {

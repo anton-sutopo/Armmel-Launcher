@@ -36,9 +36,9 @@ android {
             } else if (System.getenv("RELEASE_STORE_FILE")) {
                 storeFile file(System.getenv("RELEASE_STORE_FILE"))
             }
-            storePassword keystoreProps['storePassword "***REDACTED***"RELEASE_STORE_PASSWORD")
+            storePassword keystoreProps['storePassword'] ?: System.getenv("RELEASE_STORE_PASSWORD")
             keyAlias keystoreProps['keyAlias'] ?: System.getenv("RELEASE_KEY_ALIAS")
-            keyPassword keystoreProps['keyPassword "***REDACTED***"RELEASE_KEY_PASSWORD")
+            keyPassword keystoreProps['keyPassword'] ?: System.getenv("RELEASE_KEY_PASSWORD")
         }
     }
 
