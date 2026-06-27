@@ -465,25 +465,21 @@ public class Keyboard {
     }
 
     int[] parseCSV(String value) {
+      if (value == null || value.length() == 0) return new int[0];
+      String[] parts = value.split(",");
+      int[] values = new int[parts.length];
       int count = 0;
-      int lastIndex = 0;
-      if (value.length() > 0) {
-        count++;
-        while ((lastIndex = value.indexOf(",", lastIndex + 1)) > 0) {
-          count++;
-        }
-      }
-      int[] values = new int[count];
-      count = 0;
-      StringTokenizer st = new StringTokenizer(value, ",");
-      while (st.hasMoreTokens()) {
+      for (String token : parts) {
         try {
-          values[count++] = Integer.parseInt(st.nextToken());
+          values[count++] = Integer.parseInt(token);
         } catch (NumberFormatException nfe) {
           Log.e(TAG, "Error parsing keycodes " + value, nfe);
         }
       }
-      return values;
+      if (count == parts.length) return values;
+      int[] trimmed = new int[count];
+      System.arraycopy(values, 0, trimmed, 0, count);
+      return trimmed;
     }
 
     /**
@@ -802,25 +798,55 @@ public class Keyboard {
     mCellWidth = (getMinWidth() + GRID_WIDTH - 1) / GRID_WIDTH;
     mCellHeight = (getHeight() + GRID_HEIGHT - 1) / GRID_HEIGHT;
     mGridNeighbors = new int[GRID_SIZE][];
-    int[] indices = new int[mKeys.size()];
+
+    final int keyCount = mKeys.size();
+    // Precompute key centers to avoid repeated width/height arithmetic and method calls
+    int[] centersX = new int[keyCount];
+    int[] centersY = new int[keyCount];
+    for (int i = 0; i < keyCount; i++) {
+      final Keyboard.Key key = mKeys.get(i);
+      centersX[i] = key.x + key.width / 2;
+      centersY[i] = key.y + key.height / 2;
+    }
+
+    int[] indices = new int[keyCount];
     final int gridWidth = GRID_WIDTH * mCellWidth;
     final int gridHeight = GRID_HEIGHT * mCellHeight;
-    for (int x = 0; x < gridWidth; x += mCellWidth) {
-      for (int y = 0; y < gridHeight; y += mCellHeight) {
+    for (int gx = 0; gx < gridWidth; gx += mCellWidth) {
+      for (int gy = 0; gy < gridHeight; gy += mCellHeight) {
         int count = 0;
-        for (int i = 0; i < mKeys.size(); i++) {
-          final Keyboard.Key key = mKeys.get(i);
-          if (key.squaredDistanceFrom(x, y) < mProximityThreshold
-              || key.squaredDistanceFrom(x + mCellWidth - 1, y) < mProximityThreshold
-              || key.squaredDistanceFrom(x + mCellWidth - 1, y + mCellHeight - 1)
-                  < mProximityThreshold
-              || key.squaredDistanceFrom(x, y + mCellHeight - 1) < mProximityThreshold) {
+        final int cellX1 = gx;
+        final int cellY1 = gy;
+        final int cellX2 = gx + mCellWidth - 1;
+        final int cellY2 = gy + mCellHeight - 1;
+        for (int i = 0; i < keyCount; i++) {
+          int dx = centersX[i] - cellX1;
+          int dy = centersY[i] - cellY1;
+          if (dx * dx + dy * dy < mProximityThreshold) {
+            indices[count++] = i;
+            continue;
+          }
+          dx = centersX[i] - cellX2;
+          dy = centersY[i] - cellY1;
+          if (dx * dx + dy * dy < mProximityThreshold) {
+            indices[count++] = i;
+            continue;
+          }
+          dx = centersX[i] - cellX2;
+          dy = centersY[i] - cellY2;
+          if (dx * dx + dy * dy < mProximityThreshold) {
+            indices[count++] = i;
+            continue;
+          }
+          dx = centersX[i] - cellX1;
+          dy = centersY[i] - cellY2;
+          if (dx * dx + dy * dy < mProximityThreshold) {
             indices[count++] = i;
           }
         }
         int[] cell = new int[count];
         System.arraycopy(indices, 0, cell, 0, count);
-        mGridNeighbors[(y / mCellHeight) * GRID_WIDTH + (x / mCellWidth)] = cell;
+        mGridNeighbors[(gy / mCellHeight) * GRID_WIDTH + (gx / mCellWidth)] = cell;
       }
     }
   }
