@@ -125,6 +125,8 @@ public class ModKeyboardView extends View implements View.OnClickListener {
     final int color_current_dark = 0xffff0000;
     final int color_normal_light = 0xff000000;
     final int color_current_light = 0xffff0000;
+    final int bg_color_dark = 0xff333333;
+    final int bg_color_light = 0xffe0e0e0;
     Drawable keyBackground;
     private boolean oldDarkStatus;
     private Drawable bg;
@@ -428,28 +430,86 @@ public class ModKeyboardView extends View implements View.OnClickListener {
             paint.setTextSize(dpToPx(16, context.getResources()));
             paint.setColor(currentcodeindex == 0 ? color_current : color_normal);
             paint.getTextBounds(labels[0], 0, 1, r);
-            canvas.drawText(
-                    labels[0], centerX - r.width() / 2 - r.left, centerY + r.height() / 2 - r.bottom, paint);
+            
+            // Calculate center position for text
+            float centerTextX = centerX - r.width() / 2 - r.left;
+            float centerTextY = centerY + r.height() / 2 - r.bottom;
+            
+            // Draw background for center character if selected
+            if (currentcodeindex == 0) {
+                int bgColor = isDark ? bg_color_dark : bg_color_light;
+                paint.setColor(bgColor);
+                float radius = Math.max(r.width(), r.height()) / 2 + 8;
+                canvas.drawCircle(centerX, centerY, radius, paint);
+            }
+            
+            paint.setColor(currentcodeindex == 0 ? color_current : color_normal);
+            canvas.drawText(labels[0], centerTextX, centerTextY, paint);
+            
             if (key.codes.length == 5) {
                 // Draw more side letters
                 paint.setTypeface(tf == null ? Typeface.DEFAULT : tf);
                 paint.setTextSize(dpToPx(13, context.getResources()));
-                paint.setColor(currentcodeindex == 1 ? color_current : color_normal);
+                
+                // Left character
                 paint.getTextBounds(labels[1], 0, 1, r);
-                canvas.drawText(
-                        labels[1], padding.left + marginX, centerY + r.height() / 2 - r.bottom, paint);
-                paint.setColor(currentcodeindex == 3 ? color_current : color_normal);
+                float leftTextX = padding.left + marginX;
+                float leftTextY = centerY + r.height() / 2 - r.bottom;
+                float leftCenterX = leftTextX + r.left + r.width() / 2;
+                float leftCenterY = leftTextY + r.top + r.height() / 2;
+                if (currentcodeindex == 1) {
+                    int bgColor = isDark ? bg_color_dark : bg_color_light;
+                    paint.setColor(bgColor);
+                    float radius = Math.max(r.width(), r.height()) / 2 + 6;
+                    canvas.drawCircle(leftCenterX, leftCenterY, radius, paint);
+                }
+                paint.setColor(currentcodeindex == 1 ? color_current : color_normal);
+                canvas.drawText(labels[1], leftTextX, leftTextY, paint);
+                
+                // Right character
                 paint.getTextBounds(labels[3], 0, 1, r);
-                canvas.drawText(
-                        labels[3], key.width - marginX - r.right, centerY + r.height() / 2 - r.bottom, paint);
-                paint.setColor(currentcodeindex == 2 ? color_current : color_normal);
+                float rightTextX = key.width - marginX - r.right;
+                float rightTextY = centerY + r.height() / 2 - r.bottom;
+                float rightCenterX = rightTextX + r.left + r.width() / 2;
+                float rightCenterY = rightTextY + r.top + r.height() / 2;
+                if (currentcodeindex == 3) {
+                    int bgColor = isDark ? bg_color_dark : bg_color_light;
+                    paint.setColor(bgColor);
+                    float radius = Math.max(r.width(), r.height()) / 2 + 6;
+                    canvas.drawCircle(rightCenterX, rightCenterY, radius, paint);
+                }
+                paint.setColor(currentcodeindex == 3 ? color_current : color_normal);
+                canvas.drawText(labels[3], rightTextX, rightTextY, paint);
+                
+                // Top character
                 paint.getTextBounds(labels[2], 0, 1, r);
-                canvas.drawText(
-                        labels[2], centerX - r.width() / 2 - r.left, padding.top + marginY - r.top, paint);
-                paint.setColor(currentcodeindex == 4 ? color_current : color_normal);
+                float topTextX = centerX - r.width() / 2 - r.left;
+                float topTextY = padding.top + marginY - r.top;
+                float topCenterX = topTextX + r.left + r.width() / 2;
+                float topCenterY = topTextY + r.top + r.height() / 2;
+                if (currentcodeindex == 2) {
+                    int bgColor = isDark ? bg_color_dark : bg_color_light;
+                    paint.setColor(bgColor);
+                    float radius = Math.max(r.width(), r.height()) / 2 + 6;
+                    canvas.drawCircle(topCenterX, topCenterY, radius, paint);
+                }
+                paint.setColor(currentcodeindex == 2 ? color_current : color_normal);
+                canvas.drawText(labels[2], topTextX, topTextY, paint);
+                
+                // Bottom character
                 paint.getTextBounds(labels[4], 0, 1, r);
-                canvas.drawText(
-                        labels[4], centerX - r.width() / 2 - r.left, key.height - marginY - r.bottom, paint);
+                float bottomTextX = centerX - r.width() / 2 - r.left;
+                float bottomTextY = key.height - marginY - r.bottom;
+                float bottomCenterX = bottomTextX + r.left + r.width() / 2;
+                float bottomCenterY = bottomTextY + r.top + r.height() / 2;
+                if (currentcodeindex == 4) {
+                    int bgColor = isDark ? bg_color_dark : bg_color_light;
+                    paint.setColor(bgColor);
+                    float radius = Math.max(r.width(), r.height()) / 2 + 6;
+                    canvas.drawCircle(bottomCenterX, bottomCenterY, radius, paint);
+                }
+                paint.setColor(currentcodeindex == 4 ? color_current : color_normal);
+                canvas.drawText(labels[4], bottomTextX, bottomTextY, paint);
             }
             if (key.codes[0] == Keyboard.KEYCODE_SHIFT && mCapsLock) {
                 // Special handling of caps lock
