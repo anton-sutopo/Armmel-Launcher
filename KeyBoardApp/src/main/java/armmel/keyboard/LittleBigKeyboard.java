@@ -264,6 +264,7 @@ public class LittleBigKeyboard extends InputMethodService
         ic.finishComposingText();
       }
     }
+    updateShiftKeyState();
   }
 
   /**
@@ -306,8 +307,9 @@ public class LittleBigKeyboard extends InputMethodService
           && (mAlphaKeyboard == mInputView.getKeyboard()
               || mAlphaShiftedKeyboard == mInputView.getKeyboard())) {
         EditorInfo ei = getCurrentInputEditorInfo();
-        if (ei != null && ei.inputType != EditorInfo.TYPE_NULL) {
-          caps = getCurrentInputConnection().getCursorCapsMode(attr.inputType);
+        InputConnection ic = getCurrentInputConnection();
+        if (ei != null && ei.inputType != EditorInfo.TYPE_NULL && ic != null) {
+          caps = ic.getCursorCapsMode(attr.inputType);
         }
       }
       setShifted(mCapsLock || caps != 0);
