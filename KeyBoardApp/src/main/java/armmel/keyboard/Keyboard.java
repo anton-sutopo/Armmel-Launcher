@@ -237,6 +237,7 @@ public class Keyboard {
       a = res.obtainAttributes(Xml.asAttributeSet(parser), R.styleable.Keyboard_Row);
       rowEdgeFlags = a.getInt(R.styleable.Keyboard_Row_rowEdgeFlags, 0);
       mode = a.getResourceId(R.styleable.Keyboard_Row_keyboardMode, 0);
+      a.recycle();
     }
   }
 

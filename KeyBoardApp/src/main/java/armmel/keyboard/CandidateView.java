@@ -100,6 +100,7 @@ public class CandidateView extends View {
 
     mGestureDetector =
         new GestureDetector(
+            context,
             new GestureDetector.SimpleOnGestureListener() {
               @Override
               public boolean onScroll(
@@ -249,8 +250,7 @@ public class CandidateView extends View {
     mTypedWordValid = typedWordValid;
     scrollTo(0, 0);
     mTargetScrollX = 0;
-    // Compute the total width
-    onDraw(null);
+    updateSuggestionsLayout();
     invalidate();
     requestLayout();
   }
@@ -298,8 +298,15 @@ public class CandidateView extends View {
         mSelectedIndex = -1;
         removeHighlight();
         requestLayout();
+        performClick();
         break;
     }
+    return true;
+  }
+
+  @Override
+  public boolean performClick() {
+    super.performClick();
     return true;
   }
 
@@ -310,8 +317,7 @@ public class CandidateView extends View {
    */
   public void takeSuggestionAt(float x) {
     mTouchX = (int) x;
-    // To detect candidate
-    onDraw(null);
+    updateSuggestionsLayout();
     if (mSelectedIndex >= 0) {
       mService.pickSuggestionManually(mSelectedIndex);
     }
@@ -321,5 +327,32 @@ public class CandidateView extends View {
   private void removeHighlight() {
     mTouchX = OUT_OF_BOUNDS;
     invalidate();
+  }
+
+  private void updateSuggestionsLayout() {
+    mTotalWidth = 0;
+    if (mSuggestions == null) {
+      return;
+    }
+
+    int x = 0;
+    final int count = mSuggestions.size();
+    final int touchX = mTouchX;
+    final int scrollX = getScrollX();
+    final boolean scrolled = mScrolled;
+
+    mSelectedIndex = -1;
+    for (int i = 0; i < count; i++) {
+      String suggestion = mSuggestions.get(i);
+      final int wordWidth = (int) mPaint.measureText(suggestion) + X_GAP * 2;
+
+      mWordX[i] = x;
+      mWordWidth[i] = wordWidth;
+      if (touchX + scrollX >= x && touchX + scrollX < x + wordWidth && !scrolled) {
+        mSelectedIndex = i;
+      }
+      x += wordWidth;
+    }
+    mTotalWidth = x;
   }
 }

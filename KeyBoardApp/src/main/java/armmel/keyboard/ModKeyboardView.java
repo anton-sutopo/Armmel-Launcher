@@ -28,12 +28,14 @@ import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
 import armmel.keyboard.Keyboard.Key;
+import java.lang.ref.WeakReference;
 import java.util.List;
 
 /**
@@ -130,20 +132,35 @@ public class ModKeyboardView extends View implements View.OnClickListener {
     Drawable keyBackground;
     private boolean oldDarkStatus;
     private Drawable bg;
-    Handler mHandler =
-        new Handler() {
-            @Override
-            public void handleMessage(Message msg) {
-                switch (msg.what) {
-                    case MSG_REPEAT:
-                        sendCurrentCode();
-                        Message repeat = Message.obtain(this, MSG_REPEAT);
-                        sendMessageDelayed(repeat, REPEAT_INTERVAL);
-                        mRepeating = true;
-                        break;
-                }
+    private final Handler mHandler = new RepeatHandler(this);
+
+    private static final class RepeatHandler extends Handler {
+        private final WeakReference<ModKeyboardView> viewRef;
+
+        RepeatHandler(ModKeyboardView view) {
+            super(Looper.getMainLooper());
+            viewRef = new WeakReference<>(view);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            ModKeyboardView view = viewRef.get();
+            if (view == null) {
+                return;
             }
-        };
+            switch (msg.what) {
+                case MSG_REPEAT:
+                    view.sendCurrentCode();
+                    Message repeat = Message.obtain(this, MSG_REPEAT);
+                    sendMessageDelayed(repeat, REPEAT_INTERVAL);
+                    view.mRepeating = true;
+                    break;
+                default:
+                    super.handleMessage(msg);
+                    break;
+            }
+        }
+    }
 
     public ModKeyboardView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -594,6 +611,7 @@ public class ModKeyboardView extends View implements View.OnClickListener {
                     sendCurrentCode();
                 }
                 endMotion();
+                performClick();
                 result = true;
             }
         } else if (action == MotionEvent.ACTION_CANCEL) {
@@ -602,6 +620,12 @@ public class ModKeyboardView extends View implements View.OnClickListener {
         }
 
         return result;
+    }
+
+    @Override
+    public boolean performClick() {
+        super.performClick();
+        return true;
     }
 
     private void updateCurrentCodeIndex(Key key, int touchX, int touchY) {
@@ -673,5 +697,11 @@ public class ModKeyboardView extends View implements View.OnClickListener {
 
     public void setTheme(boolean isDark) {
         this.isDark = isDark;
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        mHandler.removeCallbacksAndMessages(null);
+        super.onDetachedFromWindow();
     }
 }
