@@ -742,7 +742,7 @@ public class LittleBigKeyboard extends InputMethodService
   }
 
   private void clearDictionarySuggestions() {
-    if (mPredictionOn && !mJawaMode) {
+    if (shouldShowFallbackEmoji()) {
       showFallbackEmoji();
       return;
     }
@@ -769,6 +769,30 @@ public class LittleBigKeyboard extends InputMethodService
   private void ensureDictionaryEngine() {
     if (mDictionaryEngine == null) {
       mDictionaryEngine = new DictionaryEngine(this);
+    }
+  }
+
+  private boolean shouldShowFallbackEmoji() {
+    if (mJawaMode) {
+      return false;
+    }
+
+    EditorInfo attribute = getCurrentInputEditorInfo();
+    if (attribute == null) {
+      return false;
+    }
+
+    if ((attribute.inputType & EditorInfo.TYPE_MASK_CLASS) != EditorInfo.TYPE_CLASS_TEXT) {
+      return false;
+    }
+
+    switch (attribute.inputType & EditorInfo.TYPE_MASK_VARIATION) {
+      case EditorInfo.TYPE_TEXT_VARIATION_PASSWORD:
+      case EditorInfo.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD:
+      case EditorInfo.TYPE_TEXT_VARIATION_WEB_PASSWORD:
+        return false;
+      default:
+        return true;
     }
   }
 
