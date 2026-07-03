@@ -27,6 +27,7 @@ import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class CandidateView extends View {
@@ -42,11 +43,11 @@ public class CandidateView extends View {
 
   private Rect mBgPadding;
 
-  private static final int MAX_SUGGESTIONS = 32;
+  private static final int INITIAL_SUGGESTIONS_CAPACITY = 32;
   private static final int SCROLL_PIXELS = 20;
 
-  private int[] mWordWidth = new int[MAX_SUGGESTIONS];
-  private int[] mWordX = new int[MAX_SUGGESTIONS];
+  private int[] mWordWidth = new int[INITIAL_SUGGESTIONS_CAPACITY];
+  private int[] mWordX = new int[INITIAL_SUGGESTIONS_CAPACITY];
   private static final int X_GAP = 10;
 
   private static final List<String> EMPTY_LIST = new ArrayList<String>();
@@ -174,6 +175,7 @@ public class CandidateView extends View {
     }
     int x = 0;
     final int count = mSuggestions.size();
+    ensureWordCapacity(count);
     final int height = getHeight();
     final Rect bgPadding = mBgPadding;
     final Paint paint = mPaint;
@@ -337,6 +339,7 @@ public class CandidateView extends View {
 
     int x = 0;
     final int count = mSuggestions.size();
+    ensureWordCapacity(count);
     final int touchX = mTouchX;
     final int scrollX = getScrollX();
     final boolean scrolled = mScrolled;
@@ -354,5 +357,15 @@ public class CandidateView extends View {
       x += wordWidth;
     }
     mTotalWidth = x;
+  }
+
+  private void ensureWordCapacity(int count) {
+    if (count <= mWordWidth.length) {
+      return;
+    }
+
+    int newCapacity = Math.max(count, mWordWidth.length * 2);
+    mWordWidth = Arrays.copyOf(mWordWidth, newCapacity);
+    mWordX = Arrays.copyOf(mWordX, newCapacity);
   }
 }

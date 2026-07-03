@@ -1,0 +1,14 @@
+Dictionary assets in src/main/assets/ are generated from these upstream LibreOffice dictionary files:
+
+- English: https://raw.githubusercontent.com/LibreOffice/dictionaries/master/en/en_US.dic
+- Indonesian: https://raw.githubusercontent.com/LibreOffice/dictionaries/master/id/id_ID.dic
+
+Generation rules:
+- run ./gradlew :KeyBoardApp:updateDictionaries from the repository root
+- skip the first line because it is the Hunspell entry count
+- strip Hunspell flags by removing everything after the first slash
+- keep lowercase single-word entries that match ^[a-z][a-z'-]*$
+- special-case the English pronoun "I" to keep it as "i"
+- sort and deduplicate the final word list
+
+Upstream license and README files are copied into this directory.

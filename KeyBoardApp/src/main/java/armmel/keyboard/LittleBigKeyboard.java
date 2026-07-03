@@ -22,13 +22,16 @@ import android.inputmethodservice.InputMethodService;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
-import android.view.inputmethod.CompletionInfo;
+import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.ExtractedText;
 import android.view.inputmethod.ExtractedTextRequest;
 import android.view.inputmethod.InputConnection;
-import java.util.ArrayList;
+import android.widget.FrameLayout;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
 /** Input method for a soft keyboard. Based on the android sample code: softkeyboard. */
 public class LittleBigKeyboard extends InputMethodService
@@ -36,17 +39,124 @@ public class LittleBigKeyboard extends InputMethodService
 
   static final boolean DEBUG = false;
   //    static final boolean DEBUG = true;
+  private static final int MAX_DICTIONARY_SUGGESTIONS = 8;
+  private static final List<String> FALLBACK_EMOJIS =
+      Collections.unmodifiableList(
+          Arrays.asList(
+              "😀",
+              "😃",
+              "😄",
+              "😁",
+              "😆",
+              "😅",
+              "😂",
+              "🤣",
+              "🙂",
+              "😊",
+              "😉",
+              "😍",
+              "😘",
+              "🥰",
+              "😎",
+              "🤗",
+              "🤔",
+              "🤭",
+              "😭",
+              "😡",
+              "🥹",
+              "😴",
+              "🤩",
+              "😇",
+              "👍",
+              "👎",
+              "👌",
+              "✌️",
+              "🤞",
+              "🤟",
+              "👏",
+              "🙌",
+              "🙏",
+              "💪",
+              "👋",
+              "🤝",
+              "❤️",
+              "🩷",
+              "🧡",
+              "💛",
+              "💚",
+              "💙",
+              "💜",
+              "🖤",
+              "🤍",
+              "🤎",
+              "💔",
+              "💕",
+              "💞",
+              "💯",
+              "🔥",
+              "✨",
+              "⭐",
+              "🌟",
+              "🎉",
+              "🎊",
+              "✅",
+              "❌",
+              "⚠️",
+              "🚀",
+              "📌",
+              "💡",
+              "📷",
+              "📱",
+              "💻",
+              "⌚",
+              "🎵",
+              "🎮",
+              "🏆",
+              "⚽",
+              "🏀",
+              "🍎",
+              "🍕",
+              "🍔",
+              "🍟",
+              "🌮",
+              "🍜",
+              "☕",
+              "🧋",
+              "🍰",
+              "🍩",
+              "🐱",
+              "🐶",
+              "🐼",
+              "🐸",
+              "🦊",
+              "🐥",
+              "🌸",
+              "🌼",
+              "🌈",
+              "☀️",
+              "🌙",
+              "⭐",
+              "⛄",
+              "🌊",
+              "🎁",
+              "🛒",
+              "🏠",
+              "🚗",
+              "✈️"));
 
   private ModKeyboardView mInputView;
   private CandidateView mCandidateView;
-  private CompletionInfo[] mCompletions;
+  private DictionaryEngine mDictionaryEngine;
 
   // Composing is only used for dead key accent combinations (maximum length 1)
   private char mDeadKeyComposing;
-  private boolean mCompletionOn;
+  private final StringBuilder mComposingWord = new StringBuilder();
+  private boolean mPredictionOn;
   private boolean mCapsLock;
   private long mLastShiftTime;
   private boolean mJawaMode;
+  private boolean mShowingFallbackEmoji;
+  private List<String> mDictionarySuggestions = Collections.emptyList();
 
   private Keyboard mAlphaKeyboard;
   private Keyboard mAlphaShiftedKeyboard;
@@ -121,6 +231,18 @@ public class LittleBigKeyboard extends InputMethodService
       Log.d(TAG, "onCreateInputView()");
     }
     View rootView = getLayoutInflater().inflate(R.layout.input, null);
+    FrameLayout candidatesContainer = (FrameLayout) rootView.findViewById(R.id.candidates_container);
+    if (mCandidateView == null) {
+      mCandidateView = new CandidateView(this);
+      mCandidateView.setService(this);
+    } else {
+      ViewGroup currentParent = (ViewGroup) mCandidateView.getParent();
+      if (currentParent != null) {
+        currentParent.removeView(mCandidateView);
+      }
+    }
+    candidatesContainer.addView(mCandidateView);
+    updateCandidateVisibility(false);
     mInputView = (ModKeyboardView) rootView.findViewById(R.id.keyboard);
     mInputView.setTheme(isDark());
     mInputView.setOnKeyboardActionListener(this);
@@ -137,9 +259,7 @@ public class LittleBigKeyboard extends InputMethodService
    */
   @Override
   public View onCreateCandidatesView() {
-    mCandidateView = new CandidateView(this);
-    mCandidateView.setService(this);
-    return mCandidateView;
+    return null;
   }
 
   /**
@@ -157,9 +277,9 @@ public class LittleBigKeyboard extends InputMethodService
     // Reset our state.  We want to do this even if restarting, because
     // the underlying state of the text editor could have changed in any way.
     mDeadKeyComposing = 0;
+    clearComposingWord();
 
-    mCompletionOn = false;
-    mCompletions = null;
+    mPredictionOn = false;
 
     // We are now going to initialize our state based on the type of
     // text being edited.
@@ -183,15 +303,7 @@ public class LittleBigKeyboard extends InputMethodService
         // be doing predictive text (showing candidates as the
         // user types).
         mCurKeyboard = mJawaMode ? mJawaKeyboard : mAlphaKeyboard;
-
-        if ((attribute.inputType & EditorInfo.TYPE_TEXT_FLAG_AUTO_COMPLETE) != 0) {
-          // If this is an auto-complete text view, then our predictions
-          // will not be shown and instead we will allow the editor
-          // to supply their own.  We only show the editor's
-          // candidates when in fullscreen mode, otherwise relying
-          // on it displaying its own UI.
-          mCompletionOn = isFullscreenMode();
-        }
+        mPredictionOn = isPredictionEnabled(attribute);
         break;
 
       default:
@@ -208,12 +320,13 @@ public class LittleBigKeyboard extends InputMethodService
 
     // Clear current composing text
     mDeadKeyComposing = 0;
+    clearComposingWord();
 
     // We only hide the candidates window when finishing input on
     // a particular editor, to avoid popping the underlying application
     // up and down if the user is entering text into the bottom of
     // its window.
-    setCandidatesViewShown(false);
+    updateCandidateVisibility(false);
 
     mCurKeyboard = mJawaMode ? mJawaKeyboard : mAlphaKeyboard;
   }
@@ -223,6 +336,7 @@ public class LittleBigKeyboard extends InputMethodService
     super.onStartInputView(attribute, restarting);
     // Apply the selected keyboard to the input view.
     mInputView.setKeyboard(mCurKeyboard);
+    clearDictionarySuggestions();
     updateShiftKeyState();
   }
 
@@ -264,31 +378,14 @@ public class LittleBigKeyboard extends InputMethodService
         ic.finishComposingText();
       }
     }
+    if (mComposingWord.length() > 0 && !cursorStillAtComposingWord(newSelStart, newSelEnd)) {
+      clearComposingWord();
+    }
     updateShiftKeyState();
   }
 
-  /**
-   * This tells us about completions that the editor has determined based on the current text in it.
-   * We want to use this in fullscreen mode to show the completions ourself, since the editor can
-   * not be seen in that situation.
-   */
   @Override
-  public void onDisplayCompletions(CompletionInfo[] completions) {
-    if (mCompletionOn) {
-      mCompletions = completions;
-      if (completions == null) {
-        setSuggestions(null, false, false);
-        return;
-      }
-
-      List<String> stringList = new ArrayList<String>();
-      for (int i = 0; i < (completions != null ? completions.length : 0); i++) {
-        CompletionInfo ci = completions[i];
-        if (ci != null) stringList.add(ci.getText().toString());
-      }
-      setSuggestions(stringList, true, true);
-    }
-  }
+  public void onDisplayCompletions(android.view.inputmethod.CompletionInfo[] completions) {}
 
   /** Helper function to commit any text being composed in to the editor. */
   private void commitTyped(InputConnection inputConnection) {
@@ -372,14 +469,18 @@ public class LittleBigKeyboard extends InputMethodService
     } else if (primaryCode == Keyboard.KEYCODE_JAVA) {
       handleJawaModeChange();
     } else if (primaryCode == Keyboard.KEYCODE_LEFT) {
+      clearComposingWord();
       sendDownUpKeyEvents(KeyEvent.KEYCODE_DPAD_LEFT);
     } else if (primaryCode == Keyboard.KEYCODE_RIGHT) {
+      clearComposingWord();
       sendDownUpKeyEvents(KeyEvent.KEYCODE_DPAD_RIGHT);
     } else if (primaryCode == Keyboard.KEYCODE_END) {
+      clearComposingWord();
       for (int i = 0; i < 5; i++) {
         sendDownUpKeyEvents(KeyEvent.KEYCODE_DPAD_RIGHT);
       }
     } else if (primaryCode == Keyboard.KEYCODE_HOME) {
+      clearComposingWord();
       getCurrentInputConnection().setSelection(0, 0);
     } else if (primaryCode == Keyboard.KEYCODE_DEAD_ACUTE) {
       handleDeadKey('\u00b4');
@@ -397,13 +498,17 @@ public class LittleBigKeyboard extends InputMethodService
         // Compose with previous accent
         int r = (char) KeyEvent.getDeadChar(mDeadKeyComposing, primaryCode);
         if (r != 0) mDeadKeyComposing = (char) r;
+        final String committed = Character.toString(mDeadKeyComposing);
         commitTyped(getCurrentInputConnection());
+        handleCommittedText(committed);
       } else {
         if (primaryCode != 10) {
           final InputConnection ic = getCurrentInputConnection();
           final String text = new String(new int[] {primaryCode}, 0, 1);
           ic.commitText(text, text.length());
+          handleCommittedText(text);
         } else {
+          clearComposingWord();
           sendKeyChar((char) primaryCode);
         }
       }
@@ -417,18 +522,15 @@ public class LittleBigKeyboard extends InputMethodService
     ic.beginBatchEdit();
     ic.commitText(text, 0);
     ic.endBatchEdit();
+    handleCommittedText(text);
     updateShiftKeyState();
   }
 
   public void setSuggestions(
       List<String> suggestions, boolean completions, boolean typedWordValid) {
-    if (suggestions != null && suggestions.size() > 0) {
-      setCandidatesViewShown(true);
-    } else if (isExtractViewShown()) {
-      setCandidatesViewShown(true);
-    }
     if (mCandidateView != null) {
       mCandidateView.setSuggestions(suggestions, completions, typedWordValid);
+      updateCandidateVisibility(suggestions != null && !suggestions.isEmpty());
     }
   }
 
@@ -438,6 +540,7 @@ public class LittleBigKeyboard extends InputMethodService
       getCurrentInputConnection().setComposingText("", 0);
     } else {
       sendDownUpKeyEvents(KeyEvent.KEYCODE_DEL);
+      trimComposingWord();
     }
     updateShiftKeyState();
   }
@@ -449,6 +552,7 @@ public class LittleBigKeyboard extends InputMethodService
   }
 
   private void handleJawaModeChange() {
+    clearComposingWord();
     Keyboard current = mAlphaKeyboard;
     if (!mJawaMode) {
       mJawaMode = true;
@@ -461,6 +565,7 @@ public class LittleBigKeyboard extends InputMethodService
   }
 
   private void handleModeChange() {
+    clearComposingWord();
     Keyboard current = mInputView.getKeyboard();
     if (mJawaMode) {
       handleModeChangeJawa(current);
@@ -495,6 +600,7 @@ public class LittleBigKeyboard extends InputMethodService
 
   private void handleClose() {
     commitTyped(getCurrentInputConnection());
+    clearComposingWord();
     requestHideSelf(0);
   }
 
@@ -520,11 +626,28 @@ public class LittleBigKeyboard extends InputMethodService
   //    }
 
   public void pickSuggestionManually(int index) {
-    if (mCompletionOn && mCompletions != null && index >= 0 && index < mCompletions.length) {
-      CompletionInfo ci = mCompletions[index];
-      getCurrentInputConnection().commitCompletion(ci);
-      if (mCandidateView != null) {
-        mCandidateView.clear();
+    if (mShowingFallbackEmoji) {
+      InputConnection inputConnection = getCurrentInputConnection();
+      if (inputConnection != null && index >= 0 && index < FALLBACK_EMOJIS.size()) {
+        inputConnection.commitText(FALLBACK_EMOJIS.get(index), 1);
+      }
+      clearComposingWord();
+      updateShiftKeyState();
+      return;
+    }
+
+    if (index >= 0 && index < mDictionarySuggestions.size() && mComposingWord.length() > 0) {
+      String suggestion = mDictionarySuggestions.get(index);
+      String committedSuggestion = formatSuggestionForCommit(suggestion);
+      InputConnection inputConnection = getCurrentInputConnection();
+      if (inputConnection != null) {
+        inputConnection.beginBatchEdit();
+        inputConnection.deleteSurroundingText(mComposingWord.length(), 0);
+        inputConnection.commitText(committedSuggestion, 1);
+        inputConnection.endBatchEdit();
+        mComposingWord.setLength(0);
+        mComposingWord.append(suggestion);
+        updateDictionarySuggestions();
       }
       updateShiftKeyState();
     }
@@ -533,4 +656,199 @@ public class LittleBigKeyboard extends InputMethodService
   public void onPress(int primaryCode) {}
 
   public void onRelease(int primaryCode) {}
+
+  private boolean isPredictionEnabled(EditorInfo attribute) {
+    if ((attribute.inputType & EditorInfo.TYPE_TEXT_FLAG_NO_SUGGESTIONS) != 0) {
+      return false;
+    }
+
+    switch (attribute.inputType & EditorInfo.TYPE_MASK_VARIATION) {
+      case EditorInfo.TYPE_TEXT_VARIATION_EMAIL_ADDRESS:
+      case EditorInfo.TYPE_TEXT_VARIATION_EMAIL_SUBJECT:
+      case EditorInfo.TYPE_TEXT_VARIATION_FILTER:
+      case EditorInfo.TYPE_TEXT_VARIATION_PASSWORD:
+      case EditorInfo.TYPE_TEXT_VARIATION_URI:
+      case EditorInfo.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD:
+      case EditorInfo.TYPE_TEXT_VARIATION_WEB_EMAIL_ADDRESS:
+      case EditorInfo.TYPE_TEXT_VARIATION_WEB_PASSWORD:
+        return false;
+      default:
+        return true;
+    }
+  }
+
+  private void handleCommittedText(CharSequence text) {
+    if (!mPredictionOn || mJawaMode) {
+      clearComposingWord();
+      return;
+    }
+
+    if (text == null || text.length() == 0) {
+      clearDictionarySuggestions();
+      return;
+    }
+
+    String normalizedText = text.toString().toLowerCase(Locale.ROOT);
+    if (isWordFragment(normalizedText)) {
+      mComposingWord.append(normalizedText);
+      updateDictionarySuggestions();
+      return;
+    }
+
+    clearComposingWord();
+  }
+
+  private boolean isWordFragment(String text) {
+    for (int i = 0; i < text.length(); i++) {
+      char current = text.charAt(i);
+      if (!Character.isLetter(current) && current != '\'' && current != '-') {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private void trimComposingWord() {
+    if (mComposingWord.length() == 0) {
+      clearDictionarySuggestions();
+      return;
+    }
+
+    int lastCodePoint = mComposingWord.codePointBefore(mComposingWord.length());
+    int newLength = mComposingWord.length() - Character.charCount(lastCodePoint);
+    mComposingWord.delete(newLength, mComposingWord.length());
+    if (mComposingWord.length() == 0) {
+      clearDictionarySuggestions();
+      return;
+    }
+    updateDictionarySuggestions();
+  }
+
+  private void updateDictionarySuggestions() {
+    if (mComposingWord.length() < 2) {
+      showFallbackEmoji();
+      return;
+    }
+
+    ensureDictionaryEngine();
+    mDictionarySuggestions =
+        mDictionaryEngine.getSuggestions(mComposingWord.toString(), MAX_DICTIONARY_SUGGESTIONS);
+    if (mDictionarySuggestions.isEmpty()) {
+      showFallbackEmoji();
+      return;
+    }
+    mShowingFallbackEmoji = false;
+    setSuggestions(mDictionarySuggestions, false, true);
+  }
+
+  private void clearDictionarySuggestions() {
+    if (mPredictionOn && !mJawaMode) {
+      showFallbackEmoji();
+      return;
+    }
+    hideSuggestions();
+  }
+
+  private void showFallbackEmoji() {
+    mShowingFallbackEmoji = true;
+    mDictionarySuggestions = Collections.emptyList();
+    setSuggestions(FALLBACK_EMOJIS, false, true);
+  }
+
+  private void hideSuggestions() {
+    mShowingFallbackEmoji = false;
+    mDictionarySuggestions = Collections.emptyList();
+    setSuggestions(null, false, false);
+  }
+
+  private void clearComposingWord() {
+    mComposingWord.setLength(0);
+    clearDictionarySuggestions();
+  }
+
+  private void ensureDictionaryEngine() {
+    if (mDictionaryEngine == null) {
+      mDictionaryEngine = new DictionaryEngine(this);
+    }
+  }
+
+  private void updateCandidateVisibility(boolean visible) {
+    if (mCandidateView == null) {
+      return;
+    }
+
+    View parent = (View) mCandidateView.getParent();
+    if (parent != null) {
+      parent.setVisibility(View.VISIBLE);
+    }
+    mCandidateView.setVisibility(visible ? View.VISIBLE : View.INVISIBLE);
+  }
+
+  private String formatSuggestionForCommit(String suggestion) {
+    if (shouldCapitalizeSuggestion()) {
+      return capitalizeFirstCodePoint(suggestion);
+    }
+    return suggestion;
+  }
+
+  private boolean shouldCapitalizeSuggestion() {
+    InputConnection inputConnection = getCurrentInputConnection();
+    if (inputConnection == null || mComposingWord.length() == 0) {
+      return false;
+    }
+
+    CharSequence beforeCursor =
+        inputConnection.getTextBeforeCursor(mComposingWord.length() + 64, 0);
+    if (beforeCursor == null) {
+      return false;
+    }
+
+    String beforeText = beforeCursor.toString();
+    String normalizedBeforeText = beforeText.toLowerCase(Locale.ROOT);
+    if (!normalizedBeforeText.endsWith(mComposingWord.toString())) {
+      return false;
+    }
+
+    String contextBeforeWord = beforeText.substring(0, beforeText.length() - mComposingWord.length());
+    for (int index = contextBeforeWord.length() - 1; index >= 0; index--) {
+      char current = contextBeforeWord.charAt(index);
+      if (Character.isWhitespace(current)) {
+        continue;
+      }
+      return current == '.' || current == '!' || current == '?' || current == '\n';
+    }
+
+    return true;
+  }
+
+  private String capitalizeFirstCodePoint(String value) {
+    if (value == null || value.isEmpty()) {
+      return value;
+    }
+
+    int firstCodePoint = value.codePointAt(0);
+    int upperCodePoint = Character.toUpperCase(firstCodePoint);
+    int firstCodePointLength = Character.charCount(firstCodePoint);
+    StringBuilder capitalized = new StringBuilder(value.length());
+    capitalized.appendCodePoint(upperCodePoint);
+    capitalized.append(value.substring(firstCodePointLength));
+    return capitalized.toString();
+  }
+
+  private boolean cursorStillAtComposingWord(int newSelStart, int newSelEnd) {
+    if (newSelStart != newSelEnd) {
+      return false;
+    }
+
+    InputConnection inputConnection = getCurrentInputConnection();
+    if (inputConnection == null) {
+      return false;
+    }
+
+    CharSequence beforeCursor = inputConnection.getTextBeforeCursor(mComposingWord.length(), 0);
+    if (beforeCursor == null) {
+      return false;
+    }
+    return beforeCursor.toString().toLowerCase(Locale.ROOT).endsWith(mComposingWord.toString());
+  }
 }

@@ -1,11 +1,126 @@
 apply plugin: 'com.android.application'
 
+import java.net.URL
+import java.nio.charset.StandardCharsets
+
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
 }
 
 /*Gets the version name from the latest Git tag */ 
+
+def dictionarySources = [
+    english: [
+        assetFile: file('src/main/assets/dictionary_en.txt'),
+        dictionaryUrl: 'https://raw.githubusercontent.com/LibreOffice/dictionaries/master/en/en_US.dic',
+        readmeFile: file('third_party/dictionaries/README_en_US.txt'),
+        readmeUrl: 'https://raw.githubusercontent.com/LibreOffice/dictionaries/master/en/README_en_US.txt',
+        licenseFile: file('third_party/dictionaries/LICENSE_en.txt'),
+        licenseUrl: 'https://raw.githubusercontent.com/LibreOffice/dictionaries/master/en/license.txt',
+        allowUppercasePronounI: true
+    ],
+    indonesian: [
+        assetFile: file('src/main/assets/dictionary_id.txt'),
+        dictionaryUrl: 'https://raw.githubusercontent.com/LibreOffice/dictionaries/master/id/id_ID.dic',
+        readmeFile: file('third_party/dictionaries/README_id.txt'),
+        readmeUrl: 'https://raw.githubusercontent.com/LibreOffice/dictionaries/master/id/README-dict.adoc',
+        licenseFile: file('third_party/dictionaries/LICENSE_id.txt'),
+        licenseUrl: 'https://raw.githubusercontent.com/LibreOffice/dictionaries/master/id/LICENSE-dict',
+        allowUppercasePronounI: false
+    ]
+]
+
+def downloadToFile = { String sourceUrl, File destination ->
+    destination.parentFile.mkdirs()
+    new URL(sourceUrl).withInputStream { input ->
+        destination.withOutputStream { output ->
+            output << input
+        }
+    }
+}
+
+def normalizeDictionaryEntries = { File sourceFile, boolean allowUppercasePronounI ->
+    def normalizedWords = new TreeSet<String>()
+    sourceFile.withReader(StandardCharsets.UTF_8.name()) { reader ->
+        boolean firstLine = true
+        reader.eachLine { line ->
+            if (firstLine) {
+                firstLine = false
+                return
+            }
+
+            String stripped = line.replace('\r', '')
+            int slashIndex = stripped.indexOf('/')
+            if (slashIndex >= 0) {
+                stripped = stripped.substring(0, slashIndex)
+            }
+            stripped = stripped.trim()
+            if (!stripped) {
+                return
+            }
+
+            if (allowUppercasePronounI && stripped == 'I') {
+                normalizedWords.add('i')
+                return
+            }
+
+            if (stripped != stripped.toLowerCase(Locale.ROOT)) {
+                return
+            }
+
+            String normalized = stripped.toLowerCase(Locale.ROOT)
+            if (normalized ==~ /[a-z][a-z'-]*/) {
+                normalizedWords.add(normalized)
+            }
+        }
+    }
+    normalizedWords
+}
+
+tasks.register('updateDictionaries') {
+    group = 'dictionary'
+    description = 'Downloads and regenerates the English and Indonesian keyboard dictionaries.'
+
+    doLast {
+        File downloadDir = file("${buildDir}/tmp/dictionaries")
+        File noticesDir = file('third_party/dictionaries')
+        noticesDir.mkdirs()
+
+        dictionarySources.each { sourceName, sourceConfig ->
+            File downloadedDictionary = new File(downloadDir, "${sourceName}.dic")
+
+            downloadToFile(sourceConfig.dictionaryUrl, downloadedDictionary)
+            downloadToFile(sourceConfig.readmeUrl, sourceConfig.readmeFile)
+            downloadToFile(sourceConfig.licenseUrl, sourceConfig.licenseFile)
+
+            def normalizedWords =
+                normalizeDictionaryEntries(downloadedDictionary, sourceConfig.allowUppercasePronounI)
+            sourceConfig.assetFile.parentFile.mkdirs()
+            sourceConfig.assetFile.setText(
+                normalizedWords.join('\n') + '\n',
+                StandardCharsets.UTF_8.name())
+        }
+
+        file('third_party/dictionaries/SOURCES.txt').setText(
+            '''Dictionary assets in src/main/assets/ are generated from these upstream LibreOffice dictionary files:
+
+- English: https://raw.githubusercontent.com/LibreOffice/dictionaries/master/en/en_US.dic
+- Indonesian: https://raw.githubusercontent.com/LibreOffice/dictionaries/master/id/id_ID.dic
+
+Generation rules:
+- run ./gradlew :KeyBoardApp:updateDictionaries from the repository root
+- skip the first line because it is the Hunspell entry count
+- strip Hunspell flags by removing everything after the first slash
+- keep lowercase single-word entries that match ^[a-z][a-z'-]*$
+- special-case the English pronoun "I" to keep it as "i"
+- sort and deduplicate the final word list
+
+Upstream license and README files are copied into this directory.
+''',
+            StandardCharsets.UTF_8.name())
+    }
+}
 
 android { 
     namespace 'armmel.keyboard'

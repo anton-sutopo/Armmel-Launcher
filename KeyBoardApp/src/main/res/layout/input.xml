@@ -18,11 +18,18 @@
 */
 -->
 
-<FrameLayout
+<LinearLayout
         xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:orientation="vertical"
         android:fitsSystemWindows="true">
+
+    <FrameLayout
+            android:id="@+id/candidates_container"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/candidate_strip_height"
+            />
 
     <armmel.keyboard.ModKeyboardView
             android:id="@+id/keyboard"
@@ -31,4 +38,4 @@
             android:paddingTop="3dp"
             android:paddingBottom="3dp"
             />
-</FrameLayout>
+</LinearLayout>
