@@ -540,7 +540,10 @@ public class LittleBigKeyboard extends InputMethodService
       getCurrentInputConnection().setComposingText("", 0);
     } else {
       sendDownUpKeyEvents(KeyEvent.KEYCODE_DEL);
-      trimComposingWord();
+      syncComposingWordWithEditor();
+      if (mComposingWord.length() > 0) {
+        updateDictionarySuggestions();
+      }
     }
     updateShiftKeyState();
   }
@@ -690,7 +693,10 @@ public class LittleBigKeyboard extends InputMethodService
 
     String normalizedText = text.toString().toLowerCase(Locale.ROOT);
     if (isWordFragment(normalizedText)) {
-      mComposingWord.append(normalizedText);
+      syncComposingWordWithEditor();
+      if (mComposingWord.length() == 0) {
+        mComposingWord.append(normalizedText);
+      }
       updateDictionarySuggestions();
       return;
     }
@@ -708,20 +714,13 @@ public class LittleBigKeyboard extends InputMethodService
     return true;
   }
 
-  private void trimComposingWord() {
+  private void syncComposingWordWithEditor() {
+    String wordFragment = getWordFragmentBeforeCursor();
+    mComposingWord.setLength(0);
+    mComposingWord.append(wordFragment);
     if (mComposingWord.length() == 0) {
       clearDictionarySuggestions();
-      return;
     }
-
-    int lastCodePoint = mComposingWord.codePointBefore(mComposingWord.length());
-    int newLength = mComposingWord.length() - Character.charCount(lastCodePoint);
-    mComposingWord.delete(newLength, mComposingWord.length());
-    if (mComposingWord.length() == 0) {
-      clearDictionarySuggestions();
-      return;
-    }
-    updateDictionarySuggestions();
   }
 
   private void updateDictionarySuggestions() {
@@ -874,5 +873,28 @@ public class LittleBigKeyboard extends InputMethodService
       return false;
     }
     return beforeCursor.toString().toLowerCase(Locale.ROOT).endsWith(mComposingWord.toString());
+  }
+
+  private String getWordFragmentBeforeCursor() {
+    InputConnection inputConnection = getCurrentInputConnection();
+    if (inputConnection == null) {
+      return "";
+    }
+
+    CharSequence beforeCursor = inputConnection.getTextBeforeCursor(64, 0);
+    if (beforeCursor == null || beforeCursor.length() == 0) {
+      return "";
+    }
+
+    int wordStart = beforeCursor.length();
+    while (wordStart > 0) {
+      char current = beforeCursor.charAt(wordStart - 1);
+      if (!Character.isLetter(current) && current != '\'' && current != '-') {
+        break;
+      }
+      wordStart--;
+    }
+
+    return beforeCursor.subSequence(wordStart, beforeCursor.length()).toString().toLowerCase(Locale.ROOT);
   }
 }
