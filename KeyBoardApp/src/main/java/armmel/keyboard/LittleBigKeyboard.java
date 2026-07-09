@@ -28,8 +28,10 @@ import android.view.inputmethod.ExtractedText;
 import android.view.inputmethod.ExtractedTextRequest;
 import android.view.inputmethod.InputConnection;
 import android.widget.FrameLayout;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 
@@ -147,6 +149,7 @@ public class LittleBigKeyboard extends InputMethodService
   private ModKeyboardView mInputView;
   private CandidateView mCandidateView;
   private DictionaryEngine mDictionaryEngine;
+  private SuggestionRankingRepository mSuggestionRankingRepository;
 
   // Composing is only used for dead key accent combinations (maximum length 1)
   private char mDeadKeyComposing;
@@ -631,8 +634,11 @@ public class LittleBigKeyboard extends InputMethodService
   public void pickSuggestionManually(int index) {
     if (mShowingFallbackEmoji) {
       InputConnection inputConnection = getCurrentInputConnection();
-      if (inputConnection != null && index >= 0 && index < FALLBACK_EMOJIS.size()) {
-        inputConnection.commitText(FALLBACK_EMOJIS.get(index), 1);
+      List<String> fallbackEmojis = getFallbackEmojis();
+      if (inputConnection != null && index >= 0 && index < fallbackEmojis.size()) {
+        String emoji = fallbackEmojis.get(index);
+        inputConnection.commitText(emoji, 1);
+        getSuggestionRankingRepository().recordEmojiPick(emoji);
       }
       clearComposingWord();
       updateShiftKeyState();
@@ -648,6 +654,7 @@ public class LittleBigKeyboard extends InputMethodService
         inputConnection.deleteSurroundingText(mComposingWord.length(), 0);
         inputConnection.commitText(committedSuggestion, 1);
         inputConnection.endBatchEdit();
+        getSuggestionRankingRepository().recordWordPick(suggestion);
         mComposingWord.setLength(0);
         mComposingWord.append(suggestion);
         updateDictionarySuggestions();
@@ -751,7 +758,7 @@ public class LittleBigKeyboard extends InputMethodService
   private void showFallbackEmoji() {
     mShowingFallbackEmoji = true;
     mDictionarySuggestions = Collections.emptyList();
-    setSuggestions(FALLBACK_EMOJIS, false, true);
+    setSuggestions(getFallbackEmojis(), false, true);
   }
 
   private void hideSuggestions() {
@@ -767,8 +774,28 @@ public class LittleBigKeyboard extends InputMethodService
 
   private void ensureDictionaryEngine() {
     if (mDictionaryEngine == null) {
-      mDictionaryEngine = new DictionaryEngine(this);
+      mDictionaryEngine = new DictionaryEngine(this, getSuggestionRankingRepository());
     }
+  }
+
+  private SuggestionRankingRepository getSuggestionRankingRepository() {
+    if (mSuggestionRankingRepository == null) {
+      mSuggestionRankingRepository = new SuggestionRankingRepository(this);
+    }
+    return mSuggestionRankingRepository;
+  }
+
+  private List<String> getFallbackEmojis() {
+    List<String> rankedEmojis =
+        getSuggestionRankingRepository().getRankedEmojis(FALLBACK_EMOJIS.size());
+    if (rankedEmojis.isEmpty()) {
+      return FALLBACK_EMOJIS;
+    }
+
+    LinkedHashSet<String> orderedEmojis = new LinkedHashSet<String>(FALLBACK_EMOJIS.size());
+    orderedEmojis.addAll(rankedEmojis);
+    orderedEmojis.addAll(FALLBACK_EMOJIS);
+    return new ArrayList<String>(orderedEmojis);
   }
 
   private boolean shouldShowFallbackEmoji() {

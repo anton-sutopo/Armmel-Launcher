@@ -2,6 +2,7 @@ apply plugin: 'com.android.application'
 
 import java.net.URL
 import java.nio.charset.StandardCharsets
+import org.gradle.api.GradleException
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
@@ -12,7 +13,7 @@ dependencies {
 
 def dictionarySources = [
     english: [
-        assetFile: file('src/main/assets/dictionary_en.txt'),
+        sourceFile: file('src/main/dictionaries/dictionary_en.txt'),
         dictionaryUrl: 'https://raw.githubusercontent.com/LibreOffice/dictionaries/master/en/en_US.dic',
         readmeFile: file('third_party/dictionaries/README_en_US.txt'),
         readmeUrl: 'https://raw.githubusercontent.com/LibreOffice/dictionaries/master/en/README_en_US.txt',
@@ -21,7 +22,7 @@ def dictionarySources = [
         allowUppercasePronounI: true
     ],
     indonesian: [
-        assetFile: file('src/main/assets/dictionary_id.txt'),
+        sourceFile: file('src/main/dictionaries/dictionary_id.txt'),
         dictionaryUrl: 'https://raw.githubusercontent.com/LibreOffice/dictionaries/master/id/id_ID.dic',
         readmeFile: file('third_party/dictionaries/README_id.txt'),
         readmeUrl: 'https://raw.githubusercontent.com/LibreOffice/dictionaries/master/id/README-dict.adoc',
@@ -78,6 +79,63 @@ def normalizeDictionaryEntries = { File sourceFile, boolean allowUppercasePronou
     normalizedWords
 }
 
+def loadDictionaryEntries = { File sourceFile ->
+    if (!sourceFile.exists()) {
+        throw new GradleException("Missing dictionary source file: ${sourceFile}")
+    }
+
+    def words = new ArrayList<String>()
+    sourceFile.withReader(StandardCharsets.UTF_8.name()) { reader ->
+        reader.eachLine { line ->
+            String normalized = line.trim().toLowerCase(Locale.ROOT)
+            if (normalized) {
+                words.add(normalized)
+            }
+        }
+    }
+    words
+}
+
+def commonPrefixLength = { String left, String right ->
+    int max = Math.min(left.length(), right.length())
+    int index = 0
+    while (index < max && left.charAt(index) == right.charAt(index)) {
+        index++
+    }
+    index
+}
+
+def writeVarInt = { OutputStream output, int value ->
+    int remaining = value
+    while ((remaining & ~0x7F) != 0) {
+        output.write((remaining & 0x7F) | 0x80)
+        remaining >>>= 7
+    }
+    output.write(remaining)
+}
+
+def compileDictionaryBinary = { Collection<String> words, File destination ->
+    destination.parentFile.mkdirs()
+    destination.withOutputStream { output ->
+        output.write([0x41, 0x4B, 0x44, 0x31] as byte[])
+        writeVarInt(output, 1)
+        writeVarInt(output, words.size())
+
+        String previousWord = ''
+        words.each { word ->
+            int prefixLength = commonPrefixLength(previousWord, word)
+            byte[] suffixBytes = word.substring(prefixLength).getBytes(StandardCharsets.UTF_8)
+            writeVarInt(output, prefixLength)
+            writeVarInt(output, suffixBytes.length)
+            output.write(suffixBytes)
+            previousWord = word
+        }
+    }
+}
+
+def generatedDictionaryDir = file("${buildDir}/generated/dictionary-assets")
+def compiledDictionaryFile = new File(generatedDictionaryDir, 'dictionary.bin')
+
 tasks.register('updateDictionaries') {
     group = 'dictionary'
     description = 'Downloads and regenerates the English and Indonesian keyboard dictionaries.'
@@ -96,25 +154,28 @@ tasks.register('updateDictionaries') {
 
             def normalizedWords =
                 normalizeDictionaryEntries(downloadedDictionary, sourceConfig.allowUppercasePronounI)
-            sourceConfig.assetFile.parentFile.mkdirs()
-            sourceConfig.assetFile.setText(
+            sourceConfig.sourceFile.parentFile.mkdirs()
+            sourceConfig.sourceFile.setText(
                 normalizedWords.join('\n') + '\n',
                 StandardCharsets.UTF_8.name())
         }
 
         file('third_party/dictionaries/SOURCES.txt').setText(
-            '''Dictionary assets in src/main/assets/ are generated from these upstream LibreOffice dictionary files:
+            '''Dictionary source files in src/main/dictionaries/ are generated from these upstream LibreOffice dictionary files:
 
 - English: https://raw.githubusercontent.com/LibreOffice/dictionaries/master/en/en_US.dic
 - Indonesian: https://raw.githubusercontent.com/LibreOffice/dictionaries/master/id/id_ID.dic
 
 Generation rules:
 - run ./gradlew :KeyBoardApp:updateDictionaries from the repository root
+- run ./gradlew :KeyBoardApp:compileDictionaryAsset from the repository root to regenerate the packaged binary asset
 - skip the first line because it is the Hunspell entry count
 - strip Hunspell flags by removing everything after the first slash
 - keep lowercase single-word entries that match ^[a-z][a-z'-]*$
 - special-case the English pronoun "I" to keep it as "i"
-- sort and deduplicate the final word list
+- sort and deduplicate the final word list before binary compilation
+
+The APK ships build/generated/dictionary-assets/dictionary.bin instead of the raw text sources.
 
 Upstream license and README files are copied into this directory.
 ''',
@@ -122,14 +183,38 @@ Upstream license and README files are copied into this directory.
     }
 }
 
+tasks.register('compileDictionaryAsset') {
+    group = 'dictionary'
+    description = 'Compiles the dictionary source files into the packaged binary dictionary asset.'
+    inputs.files(dictionarySources.collect { it.value.sourceFile })
+    outputs.file(compiledDictionaryFile)
+
+    doLast {
+        def mergedWords = new TreeSet<String>()
+        dictionarySources.each { _, sourceConfig ->
+            mergedWords.addAll(loadDictionaryEntries(sourceConfig.sourceFile))
+        }
+        compileDictionaryBinary(mergedWords, compiledDictionaryFile)
+    }
+}
+
 android { 
     namespace 'armmel.keyboard'
+    sourceSets {
+        main {
+            assets.srcDirs = ['src/main/packaged-assets', generatedDictionaryDir.path]
+        }
+    }
         defaultConfig { 
             versionCode 20 
                 versionName 'Arm Keyboard'
                 minSdkVersion 28
                 targetSdkVersion 35
 
+        }
+
+        tasks.named('preBuild').configure {
+            dependsOn(tasks.named('compileDictionaryAsset'))
         }
 
     compileSdkVersion 35
