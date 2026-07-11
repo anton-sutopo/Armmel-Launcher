@@ -1,14 +1,20 @@
-Dictionary assets in src/main/assets/ are generated from these upstream LibreOffice dictionary files:
+Dictionary source files in src/main/dictionaries/ are generated from these upstream LibreOffice dictionary files:
 
 - English: https://raw.githubusercontent.com/LibreOffice/dictionaries/master/en/en_US.dic
+  Affix rules: https://raw.githubusercontent.com/LibreOffice/dictionaries/master/en/en_US.aff
 - Indonesian: https://raw.githubusercontent.com/LibreOffice/dictionaries/master/id/id_ID.dic
+  Affix rules: https://raw.githubusercontent.com/LibreOffice/dictionaries/master/id/id_ID.aff
 
 Generation rules:
 - run ./gradlew :KeyBoardApp:updateDictionaries from the repository root
+- run ./gradlew :KeyBoardApp:compileDictionaryAsset from the repository root to regenerate the packaged binary asset
 - skip the first line because it is the Hunspell entry count
-- strip Hunspell flags by removing everything after the first slash
+- parse Hunspell .dic and .aff files offline during generation
+- expand matching prefix and suffix rules, including continuation classes used by the upstream dictionaries
 - keep lowercase single-word entries that match ^[a-z][a-z'-]*$
 - special-case the English pronoun "I" to keep it as "i"
-- sort and deduplicate the final word list
+- sort and deduplicate the final word list before binary compilation
 
-Upstream license and README files are copied into this directory.
+The APK ships build/generated/dictionary-assets/dictionary.bin instead of the raw text sources.
+
+Upstream affix, license, and README files are copied into this directory.

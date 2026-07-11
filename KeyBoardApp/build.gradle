@@ -2,6 +2,7 @@ apply plugin: 'com.android.application'
 
 import java.net.URL
 import java.nio.charset.StandardCharsets
+import java.util.regex.Pattern
 import org.gradle.api.GradleException
 
 dependencies {
@@ -15,6 +16,8 @@ def dictionarySources = [
     english: [
         sourceFile: file('src/main/dictionaries/dictionary_en.txt'),
         dictionaryUrl: 'https://raw.githubusercontent.com/LibreOffice/dictionaries/master/en/en_US.dic',
+        affixFile: file('third_party/dictionaries/en_US.aff'),
+        affixUrl: 'https://raw.githubusercontent.com/LibreOffice/dictionaries/master/en/en_US.aff',
         readmeFile: file('third_party/dictionaries/README_en_US.txt'),
         readmeUrl: 'https://raw.githubusercontent.com/LibreOffice/dictionaries/master/en/README_en_US.txt',
         licenseFile: file('third_party/dictionaries/LICENSE_en.txt'),
@@ -24,6 +27,8 @@ def dictionarySources = [
     indonesian: [
         sourceFile: file('src/main/dictionaries/dictionary_id.txt'),
         dictionaryUrl: 'https://raw.githubusercontent.com/LibreOffice/dictionaries/master/id/id_ID.dic',
+        affixFile: file('third_party/dictionaries/id_ID.aff'),
+        affixUrl: 'https://raw.githubusercontent.com/LibreOffice/dictionaries/master/id/id_ID.aff',
         readmeFile: file('third_party/dictionaries/README_id.txt'),
         readmeUrl: 'https://raw.githubusercontent.com/LibreOffice/dictionaries/master/id/README-dict.adoc',
         licenseFile: file('third_party/dictionaries/LICENSE_id.txt'),
@@ -41,9 +46,186 @@ def downloadToFile = { String sourceUrl, File destination ->
     }
 }
 
-def normalizeDictionaryEntries = { File sourceFile, boolean allowUppercasePronounI ->
-    def normalizedWords = new TreeSet<String>()
-    sourceFile.withReader(StandardCharsets.UTF_8.name()) { reader ->
+def stripAffixComment = { String line ->
+    int commentIndex = line.indexOf('#')
+    commentIndex >= 0 ? line.substring(0, commentIndex) : line
+}
+
+def findUnescapedSlash = { String value ->
+    boolean escaped = false
+    for (int index = 0; index < value.length(); index++) {
+        char current = value.charAt(index)
+        if (escaped) {
+            escaped = false
+            continue
+        }
+        if (current == '\\') {
+            escaped = true
+            continue
+        }
+        if (current == '/') {
+            return index
+        }
+    }
+    -1
+}
+
+def parseFlagList = { String rawFlags, String flagMode ->
+    if (!rawFlags) {
+        return []
+    }
+
+    switch (flagMode) {
+        case 'long':
+            if ((rawFlags.length() & 1) != 0) {
+                throw new GradleException("Invalid long flag sequence: ${rawFlags}")
+            }
+            def flags = new ArrayList<String>(rawFlags.length().intdiv(2))
+            for (int index = 0; index < rawFlags.length(); index += 2) {
+                flags.add(rawFlags.substring(index, index + 2))
+            }
+            return flags
+        case 'num':
+            return rawFlags.split(',').findAll { it }
+        case 'UTF-8':
+        default:
+            def flags = new ArrayList<String>(rawFlags.length())
+            rawFlags.each { flags.add(it.toString()) }
+            return flags
+    }
+}
+
+def parseAffixAddition = { String rawAddition, String flagMode ->
+    String additionField = rawAddition == '0' ? '' : rawAddition
+    int slashIndex = findUnescapedSlash(additionField)
+    String addition = slashIndex >= 0 ? additionField.substring(0, slashIndex) : additionField
+    String continuationField = slashIndex >= 0 ? additionField.substring(slashIndex + 1) : ''
+    [
+        addition: addition.replace('\\/', '/'),
+        continuationFlags: new LinkedHashSet<String>(parseFlagList(continuationField, flagMode))
+    ]
+}
+
+def normalizeGeneratedWord = { String word, boolean allowUppercasePronounI ->
+    String stripped = word.replace('\r', '').trim()
+    if (!stripped) {
+        return null
+    }
+
+    if (allowUppercasePronounI && stripped == 'I') {
+        return 'i'
+    }
+
+    if (stripped != stripped.toLowerCase(Locale.ROOT)) {
+        return null
+    }
+
+    String normalized = stripped.toLowerCase(Locale.ROOT)
+    normalized ==~ /[a-z][a-z'-]*/ ? normalized : null
+}
+
+def loadAffixConfig = { File affixFile ->
+    if (!affixFile.exists()) {
+        throw new GradleException("Missing affix source file: ${affixFile}")
+    }
+
+    String charsetName = StandardCharsets.UTF_8.name()
+    String flagMode = 'short'
+    affixFile.withReader(StandardCharsets.ISO_8859_1.name()) { reader ->
+        reader.eachLine { line ->
+            String normalized = stripAffixComment(line).trim()
+            if (normalized.startsWith('SET ')) {
+                charsetName = normalized.substring(4).trim()
+            } else if (normalized.startsWith('FLAG ')) {
+                flagMode = normalized.substring(5).trim()
+            }
+        }
+    }
+
+    def affixConfig = [
+        charsetName: charsetName,
+        flagMode: flagMode,
+        prefixes: [:],
+        suffixes: [:],
+        circumfixFlags: new LinkedHashSet<String>()
+    ]
+
+    affixFile.withReader(charsetName) { reader ->
+        reader.eachLine { rawLine ->
+            String line = stripAffixComment(rawLine).trim()
+            if (!line) {
+                return
+            }
+
+            def parts = line.split(/\s+/)
+            if (parts.length == 0) {
+                return
+            }
+
+            switch (parts[0]) {
+                case 'SET':
+                    affixConfig.charsetName = parts[1]
+                    break
+                case 'FLAG':
+                    affixConfig.flagMode = parts[1]
+                    break
+                case 'CIRCUMFIX':
+                    affixConfig.circumfixFlags.addAll(parseFlagList(parts[1], affixConfig.flagMode))
+                    break
+                case 'PFX':
+                case 'SFX':
+                    if (parts.length >= 4 && (parts[2] == 'Y' || parts[2] == 'N')) {
+                        def affixMap = parts[0] == 'PFX' ? affixConfig.prefixes : affixConfig.suffixes
+                        affixMap[parts[1]] = [
+                            flag: parts[1],
+                            type: parts[0],
+                            crossProduct: parts[2] == 'Y',
+                            rules: []
+                        ]
+                        break
+                    }
+
+                    if (parts.length < 5) {
+                        break
+                    }
+
+                    def affixMap = parts[0] == 'PFX' ? affixConfig.prefixes : affixConfig.suffixes
+                    def affixDefinition = affixMap[parts[1]]
+                    if (affixDefinition == null) {
+                        throw new GradleException("Affix rule defined before header in ${affixFile}: ${rawLine}")
+                    }
+
+                    def addition = parseAffixAddition(parts[3], affixConfig.flagMode)
+                    String strip = parts[2] == '0' ? '' : parts[2].replace('\\/', '/')
+                    String condition = parts[4]
+                    affixDefinition.rules.add([
+                        flag: parts[1],
+                        type: parts[0],
+                        crossProduct: affixDefinition.crossProduct,
+                        strip: strip,
+                        add: addition.addition,
+                        continuationFlags: addition.continuationFlags,
+                        conditionPattern: Pattern.compile(
+                            parts[0] == 'PFX' ? "^${condition}.*\$" : ".*${condition}\$"
+                        )
+                    ])
+                    break
+                default:
+                    break
+            }
+        }
+    }
+
+    affixConfig
+}
+
+def loadHunspellEntries = { File dictionaryFile, Map affixConfig ->
+    if (!dictionaryFile.exists()) {
+        throw new GradleException("Missing dictionary source file: ${dictionaryFile}")
+    }
+
+    def entries = new ArrayList<Map<String, Object>>()
+    dictionaryFile.withReader(affixConfig.charsetName) { reader ->
         boolean firstLine = true
         reader.eachLine { line ->
             if (firstLine) {
@@ -51,31 +233,150 @@ def normalizeDictionaryEntries = { File sourceFile, boolean allowUppercasePronou
                 return
             }
 
-            String stripped = line.replace('\r', '')
-            int slashIndex = stripped.indexOf('/')
-            if (slashIndex >= 0) {
-                stripped = stripped.substring(0, slashIndex)
-            }
-            stripped = stripped.trim()
-            if (!stripped) {
+            String entryText = line.replace('\r', '').trim()
+            if (!entryText) {
                 return
             }
 
-            if (allowUppercasePronounI && stripped == 'I') {
-                normalizedWords.add('i')
-                return
+            String lexicalEntry = entryText.split(/\t/, 2)[0]
+            int slashIndex = findUnescapedSlash(lexicalEntry)
+            String rootWord = slashIndex >= 0 ? lexicalEntry.substring(0, slashIndex) : lexicalEntry
+            String rawFlags = slashIndex >= 0 ? lexicalEntry.substring(slashIndex + 1) : ''
+            entries.add([
+                word: rootWord.replace('\\/', '/'),
+                flags: new LinkedHashSet<String>(parseFlagList(rawFlags, affixConfig.flagMode))
+            ])
+        }
+    }
+    entries
+}
+
+def canApplyCrossProduct = { Map state, Map rule ->
+    if (rule.type == 'PFX') {
+        return !state.suffixApplied || (rule.crossProduct && state.allAppliedAffixes.every { it.crossProduct })
+    }
+    !state.prefixApplied || (rule.crossProduct && state.allAppliedAffixes.every { it.crossProduct })
+}
+
+def matchesAffixRule = { String word, Map rule ->
+    if (!rule.conditionPattern.matcher(word).matches()) {
+        return false
+    }
+
+    if (rule.type == 'PFX') {
+        return rule.strip.isEmpty() || word.startsWith(rule.strip)
+    }
+    rule.strip.isEmpty() || word.endsWith(rule.strip)
+}
+
+def applyAffixRule = { String word, Map rule ->
+    if (rule.type == 'PFX') {
+        return rule.add + word.substring(rule.strip.length())
+    }
+    return word.substring(0, word.length() - rule.strip.length()) + rule.add
+}
+
+def expandDictionaryEntries = { File dictionaryFile, File affixFile, boolean allowUppercasePronounI ->
+    def affixConfig = loadAffixConfig(affixFile)
+    def entries = loadHunspellEntries(dictionaryFile, affixConfig)
+    def normalizedWords = new TreeSet<String>()
+
+    entries.each { entry ->
+        String baseWord = normalizeGeneratedWord(entry.word, allowUppercasePronounI)
+        if (baseWord == null) {
+            return
+        }
+
+        normalizedWords.add(baseWord)
+        if (entry.flags.isEmpty()) {
+            return
+        }
+
+        def queue = new ArrayDeque<Map<String, Object>>()
+        queue.add([
+            word: baseWord,
+            availableFlags: new LinkedHashSet<String>(entry.flags),
+            usedAffixClasses: new LinkedHashSet<String>(),
+            prefixApplied: false,
+            suffixApplied: false,
+            pendingCircumfix: false,
+            allAppliedAffixes: [],
+            depth: 0
+        ])
+
+        while (!queue.isEmpty()) {
+            Map state = queue.removeFirst()
+            if (state.depth >= 3) {
+                continue
             }
 
-            if (stripped != stripped.toLowerCase(Locale.ROOT)) {
-                return
-            }
+            state.availableFlags.each { String flag ->
+                [affixConfig.prefixes[flag], affixConfig.suffixes[flag]].findAll { it != null }.each { affixDefinition ->
+                    String affixKey = "${affixDefinition.type}:${affixDefinition.flag}"
+                    if (state.usedAffixClasses.contains(affixKey)) {
+                        return
+                    }
+                    affixDefinition.rules.each { rule ->
+                        if (!canApplyCrossProduct(state, rule) || !matchesAffixRule(state.word, rule)) {
+                            return
+                        }
 
-            String normalized = stripped.toLowerCase(Locale.ROOT)
-            if (normalized ==~ /[a-z][a-z'-]*/) {
-                normalizedWords.add(normalized)
+                        String derivedWord = applyAffixRule(state.word, rule)
+                        String normalizedDerivedWord =
+                            normalizeGeneratedWord(derivedWord, allowUppercasePronounI)
+                        if (normalizedDerivedWord == null) {
+                            return
+                        }
+
+                        boolean prefixApplied = state.prefixApplied || rule.type == 'PFX'
+                        boolean suffixApplied = state.suffixApplied || rule.type == 'SFX'
+                        boolean pendingCircumfix =
+                            state.pendingCircumfix ||
+                            !Collections.disjoint(rule.continuationFlags, affixConfig.circumfixFlags)
+
+                        if (!pendingCircumfix || (prefixApplied && suffixApplied)) {
+                            normalizedWords.add(normalizedDerivedWord)
+                        }
+
+                        def nextAvailableFlags = new LinkedHashSet<String>()
+                        state.availableFlags.each { String availableFlag ->
+                            if (availableFlag == flag) {
+                                return
+                            }
+                            if (rule.type == 'PFX' && affixConfig.suffixes.containsKey(availableFlag)) {
+                                nextAvailableFlags.add(availableFlag)
+                                return
+                            }
+                            if (rule.type == 'SFX' && affixConfig.prefixes.containsKey(availableFlag)) {
+                                nextAvailableFlags.add(availableFlag)
+                            }
+                        }
+                        nextAvailableFlags.addAll(rule.continuationFlags)
+
+                        if (nextAvailableFlags.isEmpty()) {
+                            return
+                        }
+
+                        def nextUsedAffixClasses = new LinkedHashSet<String>(state.usedAffixClasses)
+                        nextUsedAffixClasses.add(affixKey)
+                        def nextAppliedAffixes = new ArrayList<Map>(state.allAppliedAffixes)
+                        nextAppliedAffixes.add([type: rule.type, crossProduct: rule.crossProduct])
+                        queue.add([
+                            word: normalizedDerivedWord,
+                            availableFlags: nextAvailableFlags,
+                            usedAffixClasses: nextUsedAffixClasses,
+                            prefixApplied: prefixApplied,
+                            suffixApplied: suffixApplied,
+                            pendingCircumfix: pendingCircumfix,
+                            allAppliedAffixes: nextAppliedAffixes,
+                            depth: state.depth + 1
+                        ])
+                    }
+                }
             }
         }
     }
+
     normalizedWords
 }
 
@@ -147,13 +448,19 @@ tasks.register('updateDictionaries') {
 
         dictionarySources.each { sourceName, sourceConfig ->
             File downloadedDictionary = new File(downloadDir, "${sourceName}.dic")
+            File downloadedAffix = new File(downloadDir, "${sourceName}.aff")
 
             downloadToFile(sourceConfig.dictionaryUrl, downloadedDictionary)
+            downloadToFile(sourceConfig.affixUrl, downloadedAffix)
+            downloadToFile(sourceConfig.affixUrl, sourceConfig.affixFile)
             downloadToFile(sourceConfig.readmeUrl, sourceConfig.readmeFile)
             downloadToFile(sourceConfig.licenseUrl, sourceConfig.licenseFile)
 
             def normalizedWords =
-                normalizeDictionaryEntries(downloadedDictionary, sourceConfig.allowUppercasePronounI)
+                expandDictionaryEntries(
+                    downloadedDictionary,
+                    downloadedAffix,
+                    sourceConfig.allowUppercasePronounI)
             sourceConfig.sourceFile.parentFile.mkdirs()
             sourceConfig.sourceFile.setText(
                 normalizedWords.join('\n') + '\n',
@@ -164,20 +471,23 @@ tasks.register('updateDictionaries') {
             '''Dictionary source files in src/main/dictionaries/ are generated from these upstream LibreOffice dictionary files:
 
 - English: https://raw.githubusercontent.com/LibreOffice/dictionaries/master/en/en_US.dic
+  Affix rules: https://raw.githubusercontent.com/LibreOffice/dictionaries/master/en/en_US.aff
 - Indonesian: https://raw.githubusercontent.com/LibreOffice/dictionaries/master/id/id_ID.dic
+  Affix rules: https://raw.githubusercontent.com/LibreOffice/dictionaries/master/id/id_ID.aff
 
 Generation rules:
 - run ./gradlew :KeyBoardApp:updateDictionaries from the repository root
 - run ./gradlew :KeyBoardApp:compileDictionaryAsset from the repository root to regenerate the packaged binary asset
 - skip the first line because it is the Hunspell entry count
-- strip Hunspell flags by removing everything after the first slash
+- parse Hunspell .dic and .aff files offline during generation
+- expand matching prefix and suffix rules, including continuation classes used by the upstream dictionaries
 - keep lowercase single-word entries that match ^[a-z][a-z'-]*$
 - special-case the English pronoun "I" to keep it as "i"
 - sort and deduplicate the final word list before binary compilation
 
 The APK ships build/generated/dictionary-assets/dictionary.bin instead of the raw text sources.
 
-Upstream license and README files are copied into this directory.
+Upstream affix, license, and README files are copied into this directory.
 ''',
             StandardCharsets.UTF_8.name())
     }
