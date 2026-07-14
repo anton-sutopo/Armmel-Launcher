@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.graphics.Rect;
 import android.text.TextPaint;
 import android.text.TextUtils;
 import android.util.AttributeSet;
@@ -19,8 +18,8 @@ public class OutlineTextView extends View {
 
   private String text = "";
 
-  private int desiredWidth, desiredHeight, charwidth;
-  private final int bigBorderSize, halfMargin;
+  private int desiredWidth, desiredHeight;
+  private final int bigBorderSize;
 
   // constructors
   public OutlineTextView(Context context) {
@@ -34,7 +33,7 @@ public class OutlineTextView extends View {
   public OutlineTextView(Context context, AttributeSet attrs, int defStyle) {
     super(context, attrs, defStyle);
 
-    float textSize = 0;
+    float textSize = dpToPx(context, 12);
     int textColor = context.getColor(R.color.main_color);
     int textBackColor = context.getColor(R.color.white);
     text = "";
@@ -57,7 +56,6 @@ public class OutlineTextView extends View {
 
     int smallBorderSize = dpToPx(context, 2);
     bigBorderSize = smallBorderSize * 3;
-    halfMargin = bigBorderSize / 2;
 
     WHITE_BORDER_PAINT = new Paint();
     WHITE_BORDER_PAINT.setTextSize(textSize);
@@ -70,34 +68,41 @@ public class OutlineTextView extends View {
     BROWN_BORDER_PAINT.setStyle(Paint.Style.STROKE);
     BROWN_BORDER_PAINT.setStrokeWidth(smallBorderSize);
     BROWN_BORDER_PAINT.setColor(context.getColor(R.color.main_color_dark));*/
-    measure();
+    updateDesiredSize();
   }
 
   public void setText(String t) {
     text = t;
-    measure();
+    updateDesiredSize();
     invalidate();
     requestLayout();
   }
 
   public void setText(CharSequence t) {
-    text = t.toString();
-    measure();
+    text = t == null ? "" : t.toString();
+    updateDesiredSize();
     invalidate();
     requestLayout();
   }
 
-  private void measure() {
-    Rect bounds = new Rect();
+  private void updateDesiredSize() {
+    float widestLine = 0;
     if (text != null) {
-      TEXT_PAINT.getTextBounds(text, 0, text.length(), bounds);
-      desiredHeight = bounds.height() + bigBorderSize;
-      desiredWidth = bounds.width() + bigBorderSize;
+      String[] paragraphs = text.split("\n", -1);
+      for (String paragraph : paragraphs) {
+        widestLine = Math.max(widestLine, TEXT_PAINT.measureText(paragraph));
+      }
     }
-    if (charwidth <= 0) {
-      TEXT_PAINT.getTextBounds("b", 0, 1, bounds);
-      charwidth = bounds.width();
-    }
+
+    Paint.FontMetrics metrics = TEXT_PAINT.getFontMetrics();
+    int outlineInset = getOutlineInset();
+    desiredWidth =
+        (int) Math.ceil(widestLine) + getPaddingLeft() + getPaddingRight() + outlineInset * 2;
+    desiredHeight =
+        (int) Math.ceil(metrics.descent - metrics.ascent)
+            + getPaddingTop()
+            + getPaddingBottom()
+            + outlineInset * 2;
   }
 
   @Override
@@ -106,49 +111,68 @@ public class OutlineTextView extends View {
 
     if (text == null || text.isEmpty()) return;
 
-    float maxWidth =
-        getWidth() - getPaddingLeft() - getPaddingRight() - WHITE_BORDER_PAINT.getStrokeWidth() * 2;
+    int outlineInset = getOutlineInset();
+    float maxWidth = getWidth() - getPaddingLeft() - getPaddingRight() - outlineInset * 2;
+    if (maxWidth <= 0) return;
 
-    int x = getWidth() / 2;
+    float x = (getPaddingLeft() + getWidth() - getPaddingRight()) / 2f;
 
     float originalSize = TEXT_PAINT.getTextSize();
-    float minSize = dpToPx(getContext(), 10);
+    float minSize = spToPx(getContext(), 6);
     float shrinkStep = dpToPx(getContext(), 0.5f);
 
     String[] lines;
 
-    // 1️⃣ Try normal size
-    lines = wrapLauncherText(TEXT_PAINT, text, maxWidth);
-
-    // 2️⃣ Shrink until max 2 lines
-    while (lines.length > 2 && TEXT_PAINT.getTextSize() > minSize) {
-      TEXT_PAINT.setTextSize(TEXT_PAINT.getTextSize() - shrinkStep);
-      WHITE_BORDER_PAINT.setTextSize(TEXT_PAINT.getTextSize());
+    if (isSingleWord(text)) {
+      while (TEXT_PAINT.measureText(text) > maxWidth && TEXT_PAINT.getTextSize() > minSize) {
+        TEXT_PAINT.setTextSize(Math.max(minSize, TEXT_PAINT.getTextSize() - shrinkStep));
+        WHITE_BORDER_PAINT.setTextSize(TEXT_PAINT.getTextSize());
+      }
+      lines =
+          TEXT_PAINT.measureText(text) <= maxWidth
+              ? new String[] {text}
+              : new String[] {
+                TextUtils.ellipsize(text, new TextPaint(TEXT_PAINT), maxWidth, TextUtils.TruncateAt.END)
+                    .toString()
+              };
+    } else {
       lines = wrapLauncherText(TEXT_PAINT, text, maxWidth);
+      while (lines.length > 2 && TEXT_PAINT.getTextSize() > minSize) {
+        TEXT_PAINT.setTextSize(Math.max(minSize, TEXT_PAINT.getTextSize() - shrinkStep));
+        WHITE_BORDER_PAINT.setTextSize(TEXT_PAINT.getTextSize());
+        lines = wrapLauncherText(TEXT_PAINT, text, maxWidth);
+      }
     }
 
-    // 3️⃣ Ellipsis fallback
     if (lines.length > 2) {
       TEXT_PAINT.setTextSize(originalSize);
       WHITE_BORDER_PAINT.setTextSize(originalSize);
-
-      TextPaint tp = new TextPaint(TEXT_PAINT);
-      String ellipsized =
-          TextUtils.ellipsize(text, tp, maxWidth * 2, TextUtils.TruncateAt.END).toString();
-
-      lines = new String[] {ellipsized};
+      lines =
+          new String[] {
+            TextUtils.ellipsize(text, new TextPaint(TEXT_PAINT), maxWidth, TextUtils.TruncateAt.END)
+                .toString()
+          };
     }
 
-    // --- draw ---
     Paint.FontMetrics fm = TEXT_PAINT.getFontMetrics();
-    int lineHeight = (int) (fm.descent - fm.ascent);
-    int y = (int) (getPaddingTop() - fm.ascent);
+    float lineHeight = fm.descent - fm.ascent;
+    float textHeight = lineHeight * lines.length;
+    float availableHeight =
+        getHeight() - getPaddingTop() - getPaddingBottom() - outlineInset * 2;
+    float y =
+        getPaddingTop()
+            + outlineInset
+            + Math.max(0, (availableHeight - textHeight) / 2f)
+            - fm.ascent;
 
     for (String line : lines) {
       canvas.drawText(line, x, y, WHITE_BORDER_PAINT);
       canvas.drawText(line, x, y, TEXT_PAINT);
       y += lineHeight;
     }
+
+    TEXT_PAINT.setTextSize(originalSize);
+    WHITE_BORDER_PAINT.setTextSize(originalSize);
   }
 
   public static int dpToPx(Context context, float dp) {
@@ -156,65 +180,81 @@ public class OutlineTextView extends View {
     return (int) (dp * scale + 0.5f);
   }
 
+  public static float spToPx(Context context, float sp) {
+    return sp * context.getResources().getDisplayMetrics().scaledDensity;
+  }
+
   public static String[] wrapLauncherText(Paint paint, String text, float maxWidth) {
     if (text == null || text.isEmpty()) return new String[0];
 
     List<String> lines = new ArrayList<>();
-    StringBuilder line = new StringBuilder();
+    int paragraphStart = 0;
+    while (paragraphStart <= text.length()) {
+      int paragraphEnd = text.indexOf('\n', paragraphStart);
+      if (paragraphEnd == -1) paragraphEnd = text.length();
 
-    int lastBreak = -1;
-
-    for (int i = 0; i < text.length(); i++) {
-      char c = text.charAt(i);
-
-      // Hard newline
-      if (c == '\n') {
-        lines.add(line.toString());
-        line.setLength(0);
-        lastBreak = -1;
-        continue;
+      int start = paragraphStart;
+      if (start == paragraphEnd) {
+        lines.add("");
       }
+      while (start < paragraphEnd) {
+        int count = paint.breakText(text, start, paragraphEnd, true, maxWidth, null);
+        int end = count > 0 ? start + count : start + 1;
+        int breakAt = end;
 
-      // Detect break BEFORE append
-      if (i > 0) {
-        char prev = text.charAt(i - 1);
-
-        if (c == ' ') {
-          lastBreak = line.length();
-        } else if (Character.isLowerCase(prev) && Character.isUpperCase(c)) {
-          lastBreak = line.length();
-        } else if (Character.isLetter(prev) && Character.isDigit(c)) {
-          lastBreak = line.length();
-        } else if (prev == '_' || prev == '-') {
-          lastBreak = line.length();
-        }
-      }
-
-      line.append(c);
-
-      if (paint.measureText(line.toString()) > maxWidth) {
-        if (lastBreak >= 0) {
-          lines.add(line.substring(0, lastBreak));
-          line.delete(0, lastBreak);
-
-          // Trim leading space
-          if (line.length() > 0 && line.charAt(0) == ' ') {
-            line.deleteCharAt(0);
+        if (end < paragraphEnd) {
+          for (int i = end; i > start; i--) {
+            char previous = text.charAt(i - 1);
+            char next = text.charAt(i);
+            if (Character.isWhitespace(previous)) {
+              breakAt = i - 1;
+              break;
+            }
+            if ((Character.isLowerCase(previous) && Character.isUpperCase(next))
+                || (Character.isLetter(previous) && Character.isDigit(next))
+                || previous == '_'
+                || previous == '-') {
+              breakAt = i;
+              break;
+            }
           }
-        } else {
-          // 🚫 no semantic break → stop wrapping
-          break;
         }
 
-        lastBreak = -1;
+        if (breakAt == start) breakAt = end;
+        lines.add(text.substring(start, breakAt));
+        start = breakAt;
+        while (start < paragraphEnd && Character.isWhitespace(text.charAt(start))) {
+          start++;
+        }
       }
-    }
 
-    if (line.length() > 0) {
-      lines.add(line.toString());
+      if (paragraphEnd == text.length()) break;
+      paragraphStart = paragraphEnd + 1;
     }
 
     return lines.toArray(new String[0]);
+  }
+
+  private int getOutlineInset() {
+    return (int) Math.ceil(WHITE_BORDER_PAINT.getStrokeWidth() / 2f);
+  }
+
+  private static boolean isSingleWord(String value) {
+    for (int i = 0; i < value.length(); i++) {
+      char current = value.charAt(i);
+      if (Character.isWhitespace(current)) return false;
+
+      if (i > 0) {
+        char previous = value.charAt(i - 1);
+        if ((Character.isLowerCase(previous) && Character.isUpperCase(current))
+            || (Character.isLetter(previous) && Character.isDigit(current))
+            || previous == '_'
+            || previous == '-') {
+          return false;
+        }
+      }
+    }
+    return true;
   }
 
   @Override
@@ -239,16 +279,28 @@ public class OutlineTextView extends View {
       width = desiredWidth;
     }
 
-    // Measure Height
+    float availableTextWidth =
+        width - getPaddingLeft() - getPaddingRight() - getOutlineInset() * 2;
+    Paint.FontMetrics metrics = TEXT_PAINT.getFontMetrics();
+    int lineCount =
+        availableTextWidth > 0 && text != null && !text.isEmpty()
+            ? isSingleWord(text)
+                ? 1
+                : Math.min(
+                    2, Math.max(1, wrapLauncherText(TEXT_PAINT, text, availableTextWidth).length))
+            : 1;
+    int multilineHeight =
+        (int) Math.ceil(metrics.descent - metrics.ascent) * lineCount
+            + getPaddingTop()
+            + getPaddingBottom()
+            + getOutlineInset() * 2;
+
     if (heightMode == MeasureSpec.EXACTLY) {
-      // Must be this size
       height = heightSize;
     } else if (heightMode == MeasureSpec.AT_MOST) {
-      // Can't be bigger than...
-      height = Math.min(desiredHeight, heightSize);
+      height = Math.min(Math.max(desiredHeight, multilineHeight), heightSize);
     } else {
-      // Be whatever you want
-      height = desiredHeight;
+      height = Math.max(desiredHeight, multilineHeight);
     }
 
     setMeasuredDimension(width, height);
