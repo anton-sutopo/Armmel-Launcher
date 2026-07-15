@@ -19,6 +19,8 @@ package armmel.keyboard;
 
 import android.content.res.Configuration;
 import android.inputmethodservice.InputMethodService;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
@@ -42,6 +44,7 @@ public class LittleBigKeyboard extends InputMethodService
   static final boolean DEBUG = false;
   //    static final boolean DEBUG = true;
   private static final int MAX_DICTIONARY_SUGGESTIONS = 8;
+  private static final long EMOJI_RANKING_DELAY_MILLIS = 1000L;
   private static final List<String> FALLBACK_EMOJIS =
       Collections.unmodifiableList(
           Arrays.asList(
@@ -159,7 +162,20 @@ public class LittleBigKeyboard extends InputMethodService
   private long mLastShiftTime;
   private boolean mJawaMode;
   private boolean mShowingFallbackEmoji;
+  private List<String> mFallbackEmojiSuggestions = Collections.emptyList();
   private List<String> mDictionarySuggestions = Collections.emptyList();
+  private final Handler mEmojiRankingHandler = new Handler(Looper.getMainLooper());
+  private final Runnable mApplyEmojiRankingRunnable =
+      new Runnable() {
+        @Override
+        public void run() {
+          if (!mShowingFallbackEmoji) {
+            return;
+          }
+          mFallbackEmojiSuggestions = getFallbackEmojis();
+          setSuggestions(mFallbackEmojiSuggestions, false, true);
+        }
+      };
 
   private Keyboard mAlphaKeyboard;
   private Keyboard mAlphaShiftedKeyboard;
@@ -184,6 +200,12 @@ public class LittleBigKeyboard extends InputMethodService
       android.os.Debug.waitForDebugger();
       Log.d(TAG, "onCreate()");
     }
+  }
+
+  @Override
+  public void onDestroy() {
+    mEmojiRankingHandler.removeCallbacks(mApplyEmojiRankingRunnable);
+    super.onDestroy();
   }
 
   /**
@@ -634,11 +656,11 @@ public class LittleBigKeyboard extends InputMethodService
   public void pickSuggestionManually(int index) {
     if (mShowingFallbackEmoji) {
       InputConnection inputConnection = getCurrentInputConnection();
-      List<String> fallbackEmojis = getFallbackEmojis();
-      if (inputConnection != null && index >= 0 && index < fallbackEmojis.size()) {
-        String emoji = fallbackEmojis.get(index);
+      if (inputConnection != null && index >= 0 && index < mFallbackEmojiSuggestions.size()) {
+        String emoji = mFallbackEmojiSuggestions.get(index);
         inputConnection.commitText(emoji, 1);
         getSuggestionRankingRepository().recordEmojiPick(emoji);
+        scheduleEmojiRankingUpdate();
       }
       clearComposingWord();
       updateShiftKeyState();
@@ -743,6 +765,7 @@ public class LittleBigKeyboard extends InputMethodService
       showFallbackEmoji();
       return;
     }
+    mEmojiRankingHandler.removeCallbacks(mApplyEmojiRankingRunnable);
     mShowingFallbackEmoji = false;
     setSuggestions(mDictionarySuggestions, false, true);
   }
@@ -756,13 +779,18 @@ public class LittleBigKeyboard extends InputMethodService
   }
 
   private void showFallbackEmoji() {
+    if (!mShowingFallbackEmoji) {
+      mFallbackEmojiSuggestions = getFallbackEmojis();
+    }
     mShowingFallbackEmoji = true;
     mDictionarySuggestions = Collections.emptyList();
-    setSuggestions(getFallbackEmojis(), false, true);
+    setSuggestions(mFallbackEmojiSuggestions, false, true);
   }
 
   private void hideSuggestions() {
     mShowingFallbackEmoji = false;
+    mEmojiRankingHandler.removeCallbacks(mApplyEmojiRankingRunnable);
+    mFallbackEmojiSuggestions = Collections.emptyList();
     mDictionarySuggestions = Collections.emptyList();
     setSuggestions(null, false, false);
   }
@@ -796,6 +824,11 @@ public class LittleBigKeyboard extends InputMethodService
     orderedEmojis.addAll(rankedEmojis);
     orderedEmojis.addAll(FALLBACK_EMOJIS);
     return new ArrayList<String>(orderedEmojis);
+  }
+
+  private void scheduleEmojiRankingUpdate() {
+    mEmojiRankingHandler.removeCallbacks(mApplyEmojiRankingRunnable);
+    mEmojiRankingHandler.postDelayed(mApplyEmojiRankingRunnable, EMOJI_RANKING_DELAY_MILLIS);
   }
 
   private boolean shouldShowFallbackEmoji() {
