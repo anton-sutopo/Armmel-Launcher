@@ -753,6 +753,11 @@ public class LittleBigKeyboard extends InputMethodService
   }
 
   private void updateDictionarySuggestions() {
+    if (!mPredictionOn) {
+      clearDictionarySuggestions();
+      return;
+    }
+
     if (mComposingWord.length() < 2) {
       showFallbackEmoji();
       return;
