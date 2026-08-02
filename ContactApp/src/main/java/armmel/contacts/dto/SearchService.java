@@ -1,7 +1,6 @@
 package armmel.contacts.dto;
 
 import android.content.Context;
-import android.util.Log;
 import armmel.contacts.database.DBHelper;
 import armmel.contacts.database.dao.ContactDao;
 import armmel.contacts.database.entity.Contact;
@@ -14,12 +13,10 @@ import java.util.List;
 import java.util.Map;
 
 public class SearchService {
-  private Context context;
-  private ContactRepository contactDao;
+  private final ContactRepository contactDao;
   private final DBHelper dbHelper;
 
   public SearchService(Context context) {
-    this.context = context;
     this.contactDao = new ContactRepository(context);
     this.dbHelper = new DBHelper(context);
   }
@@ -37,6 +34,7 @@ public class SearchService {
       Search s = searchMap.get(id);
       if (s == null) {
         s = new Search(id, name);
+        s.setSystemContactId(sd.getSystemContactId());
         searchMap.put(id, s);
       }
 
@@ -58,6 +56,7 @@ public class SearchService {
       Search s = searchMap.get(id);
       if (s == null) {
         s = new Search(id, name);
+        s.setSystemContactId(sd.getSystemContactId());
         searchMap.put(id, s);
       }
 
@@ -78,8 +77,9 @@ public class SearchService {
     } else {
       List<Contact> rs = contactDao.getAllFiltered(term);
       for (Contact r : rs) {
-        Log.d(SearchService.class.toString(), "id : " + r.getId() + ", name :" + r.getName());
-        result.add(new Search(r.getId(), r.getName()));
+        Search search = new Search(r.getId(), r.getName());
+        search.setSystemContactId(r.getSystemContactId());
+        result.add(search);
       }
     }
     result.sort(

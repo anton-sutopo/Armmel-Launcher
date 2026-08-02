@@ -30,13 +30,15 @@ public interface ContactDao {
   List<Contact> getAllFiltered(@Param("name") String name);
 
   @Query(
-      "SELECT c.id AS contact_id, c.name AS name, p.phone AS result FROM contacts c LEFT JOIN"
+      "SELECT c.id AS contact_id, c.system_contact_id AS system_contact_id, c.name AS name,"
+          + " p.phone AS result FROM contacts c LEFT JOIN"
           + " contact_phones p ON c.id = p.contact_id WHERE p.phone like :phone ORDER BY c.name"
           + " ASC")
   List<SearchDto> getContactWithPhones(@Param("phone") String phone);
 
   @Query(
-      "SELECT c.id AS contact_id, c.name AS name, p.email AS result FROM contacts c LEFT JOIN"
+      "SELECT c.id AS contact_id, c.system_contact_id AS system_contact_id, c.name AS name,"
+          + " p.email AS result FROM contacts c LEFT JOIN"
           + " contact_emails p ON c.id = p.contact_id WHERE p.email like :email ORDER BY c.name"
           + " ASC")
   List<SearchDto> getContactWithEmail(@Param("email") String phone);

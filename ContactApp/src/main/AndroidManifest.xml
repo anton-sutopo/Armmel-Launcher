@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <uses-permission android:name="android.permission.WRITE_CONTACTS" />
+    <uses-permission android:name="android.permission.AUTHENTICATE_ACCOUNTS" />
     <queries>
         <package android:name="com.whatsapp" />
         <package android:name="com.whatsapp.w4b" />
@@ -25,6 +27,17 @@
     </intent-filter>
 </activity>
 <activity android:name=".ContactDetailActivity" />
+<service
+    android:name=".ContactAccountAuthenticatorService"
+    android:exported="true"
+    android:permission="android.permission.BIND_ACCOUNT_AUTHENTICATOR">
+    <intent-filter>
+        <action android:name="android.accounts.AccountAuthenticator" />
+    </intent-filter>
+    <meta-data
+        android:name="android.accounts.AccountAuthenticator"
+        android:resource="@xml/authenticator" />
+</service>
     </application>
 
 </manifest>

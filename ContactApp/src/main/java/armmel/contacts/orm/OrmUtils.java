@@ -38,6 +38,7 @@ public class OrmUtils {
         else if (value instanceof Integer) values.put(colName, (Integer) value);
         else if (value instanceof Long) values.put(colName, (Long) value);
         else if (value instanceof byte[]) values.put(colName, (byte[]) value);
+        else if (value == null) values.putNull(colName);
       }
     }
     return values;

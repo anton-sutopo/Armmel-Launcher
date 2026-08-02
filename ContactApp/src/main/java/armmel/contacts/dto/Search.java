@@ -5,6 +5,7 @@ import java.util.List;
 
 public class Search {
   private Long contactId;
+  private Long systemContactId;
   private String name;
   private List<String> result;
 
@@ -15,6 +16,14 @@ public class Search {
 
   public Long getContactId() {
     return contactId;
+  }
+
+  public Long getSystemContactId() {
+    return systemContactId;
+  }
+
+  public void setSystemContactId(Long systemContactId) {
+    this.systemContactId = systemContactId;
   }
 
   public void setContactId(Long contactId) {

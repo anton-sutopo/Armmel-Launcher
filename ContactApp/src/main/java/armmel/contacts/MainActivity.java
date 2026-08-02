@@ -2,9 +2,13 @@ package armmel.contacts;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.Manifest;
 import android.content.Intent;
+import android.content.OperationApplicationException;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.RemoteException;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -21,6 +25,7 @@ import armmel.contacts.dto.Search;
 import armmel.contacts.dto.SearchService;
 import armmel.contacts.utils.ThemeUtils;
 import armmel.contacts.utils.Utils;
+import armmel.contacts.utils.DeviceContactsManager;
 import armmel.contacts.utils.VcfExporter;
 import armmel.contacts.utils.VcfParser;
 import java.io.IOException;
@@ -33,6 +38,7 @@ import java.util.List;
 public class MainActivity extends Activity {
   private static final int REQUEST_OPEN_VCF = 1000;
   private static final int CREATE_VCF_FILE_REQUEST_CODE = 1001;
+  private static final int REQUEST_WRITE_CONTACTS = 1002;
   private static final String TAG = "MainActivity";
   private ListView contactNames;
   ImageButton fab = null;
@@ -40,6 +46,7 @@ public class MainActivity extends Activity {
   private SearchService searchService;
   private ContactRepository contactDao;
   private String query = "";
+  private long pendingDeviceContactId = -1;
 
   @Override
   public void onResume() {
@@ -56,7 +63,14 @@ public class MainActivity extends Activity {
     contactNames = (ListView) findViewById(R.id.contact_names);
     searchService = new SearchService(this);
     List<Search> contacts = new LinkedList<>();
-    contactAdapter = new ContactAdapter(this, contacts);
+    contactAdapter =
+        new ContactAdapter(
+            this,
+            contacts,
+            contactId -> {
+              pendingDeviceContactId = contactId;
+              toggleDeviceContact();
+            });
     contactNames.setAdapter(contactAdapter);
     contactNames.setOnItemClickListener(
         (parent, view, position, id) -> {
@@ -65,6 +79,7 @@ public class MainActivity extends Activity {
           intent.putExtra("contact_id", selectedContact.getContactId()); // Pass contact ID
           startActivity(intent);
         });
+    requestContactsPermission();
 
     fab = (ImageButton) findViewById(R.id.fab);
     fab.setOnClickListener(
@@ -76,6 +91,71 @@ public class MainActivity extends Activity {
           }
         });
     Log.d(TAG, "onCreate: ends");
+  }
+
+  @Override
+  public void onRequestPermissionsResult(
+      int requestCode, String[] permissions, int[] grantResults) {
+    super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    if (requestCode != REQUEST_WRITE_CONTACTS) {
+      return;
+    }
+    if (checkSelfPermission(Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED
+        && checkSelfPermission(Manifest.permission.WRITE_CONTACTS)
+            == PackageManager.PERMISSION_GRANTED) {
+      if (pendingDeviceContactId != -1) {
+        toggleDeviceContact();
+      } else {
+        contactAdapter.updateData(query);
+      }
+    } else {
+      Toast.makeText(this, "Contacts permission is required", Toast.LENGTH_SHORT).show();
+    }
+  }
+
+  private void toggleDeviceContact() {
+    if (checkSelfPermission(Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED
+        || checkSelfPermission(Manifest.permission.WRITE_CONTACTS)
+            != PackageManager.PERMISSION_GRANTED) {
+      requestContactsPermission();
+      return;
+    }
+
+    try {
+      DeviceContactsManager.ToggleResult result =
+          new DeviceContactsManager(this).toggle(pendingDeviceContactId);
+      Toast.makeText(
+              this,
+              getDeviceContactMessage(result),
+              Toast.LENGTH_SHORT)
+          .show();
+      contactAdapter.updateData(query);
+    } catch (RemoteException | OperationApplicationException | SecurityException exception) {
+      Toast.makeText(this, "Could not update device contacts", Toast.LENGTH_SHORT).show();
+    }
+  }
+
+  private void requestContactsPermission() {
+    if (checkSelfPermission(Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED
+        || checkSelfPermission(Manifest.permission.WRITE_CONTACTS)
+            != PackageManager.PERMISSION_GRANTED) {
+      requestPermissions(
+          new String[] {Manifest.permission.READ_CONTACTS, Manifest.permission.WRITE_CONTACTS},
+          REQUEST_WRITE_CONTACTS);
+    }
+  }
+
+  private String getDeviceContactMessage(DeviceContactsManager.ToggleResult result) {
+    if (result == DeviceContactsManager.ToggleResult.ADDED) {
+      return "Added to device contacts";
+    }
+    if (result == DeviceContactsManager.ToggleResult.REMOVED) {
+      return "Removed from device contacts";
+    }
+    if (result == DeviceContactsManager.ToggleResult.REMOVAL_FAILED) {
+      return "Could not remove from device contacts";
+    }
+    return "Contact not found";
   }
 
   @Override

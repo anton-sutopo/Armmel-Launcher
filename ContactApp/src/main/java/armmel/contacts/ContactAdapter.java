@@ -9,6 +9,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import armmel.contacts.dto.Search;
 import armmel.contacts.dto.SearchService;
@@ -19,12 +20,19 @@ public class ContactAdapter extends BaseAdapter {
   private final Context context;
   private final List<Search> contacts;
   private final SearchService searchService;
+  private final OnDeviceContactAction onDeviceContactAction;
   private String keyword;
 
-  public ContactAdapter(Context context, List<Search> contacts) {
+  public interface OnDeviceContactAction {
+    void onDeviceContactAction(long contactId);
+  }
+
+  public ContactAdapter(
+      Context context, List<Search> contacts, OnDeviceContactAction onDeviceContactAction) {
     this.context = context;
     this.contacts = contacts;
     this.searchService = new SearchService(context);
+    this.onDeviceContactAction = onDeviceContactAction;
   }
 
   @Override
@@ -51,13 +59,19 @@ public class ContactAdapter extends BaseAdapter {
     }
 
     TextView txtName = convertView.findViewById(R.id.name);
+    ImageButton deviceContactsButton = convertView.findViewById(R.id.deviceContactsButton);
     if (Utils.isEmpty(keyword)) {
       txtName.setText(contact.getShow());
     } else {
       txtName.setText(coloring(contact.getShow(), keyword));
     }
-    // Optionally load photo_uri if used
-    // Example: use Glide or BitmapFactory for real image loading
+    boolean isOnDevice = contact.getSystemContactId() != null && contact.getSystemContactId() > 0;
+    deviceContactsButton.setImageResource(
+        isOnDevice ? android.R.drawable.ic_menu_delete : android.R.drawable.ic_input_add);
+    deviceContactsButton.setContentDescription(
+        context.getString(isOnDevice ? R.string.action_remove : R.string.action_add));
+    deviceContactsButton.setOnClickListener(
+        view -> onDeviceContactAction.onDeviceContactAction(contact.getContactId()));
 
     return convertView;
   }

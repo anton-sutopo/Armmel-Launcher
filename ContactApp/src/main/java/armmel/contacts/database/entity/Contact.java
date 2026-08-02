@@ -19,6 +19,9 @@ public class Contact {
   @Column(name = "title")
   private String title;
 
+  @Column(name = "system_contact_id")
+  private Long systemContactId;
+
   @Column(name = "created_at")
   private String createdAt;
 
@@ -67,6 +70,14 @@ public class Contact {
 
   public void setTitle(String title) {
     this.title = title;
+  }
+
+  public Long getSystemContactId() {
+    return systemContactId;
+  }
+
+  public void setSystemContactId(Long systemContactId) {
+    this.systemContactId = systemContactId;
   }
 
   public String getCreatedAt() {

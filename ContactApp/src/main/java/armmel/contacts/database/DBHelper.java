@@ -6,7 +6,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 public class DBHelper extends SQLiteOpenHelper {
   private static final String DB_NAME = "contacts.db";
-  private static final int DB_VERSION = 1;
+  private static final int DB_VERSION = 2;
 
   public DBHelper(Context context) {
     super(context, DB_NAME, null, DB_VERSION);
@@ -26,6 +26,7 @@ public class DBHelper extends SQLiteOpenHelper {
             + "name TEXT NOT NULL,"
             + "org TEXT,"
             + "title TEXT,"
+            + "system_contact_id INTEGER,"
             + "created_at DATETIME DEFAULT CURRENT_TIMESTAMP"
             + ")");
 
@@ -67,6 +68,8 @@ public class DBHelper extends SQLiteOpenHelper {
 
   @Override
   public void onUpgrade(SQLiteDatabase db, int oldVer, int newVer) {
-    // handle upgrades
+    if (oldVer < 2) {
+      db.execSQL("ALTER TABLE contacts ADD COLUMN system_contact_id INTEGER");
+    }
   }
 }

@@ -6,6 +6,9 @@ public class SearchDto {
   @Column(name = "contact_id")
   private Long contactId;
 
+  @Column(name = "system_contact_id")
+  private Long systemContactId;
+
   @Column(name = "name")
   private String name;
 
@@ -18,6 +21,14 @@ public class SearchDto {
 
   public void setContactId(Long contactId) {
     this.contactId = contactId;
+  }
+
+  public Long getSystemContactId() {
+    return systemContactId;
+  }
+
+  public void setSystemContactId(Long systemContactId) {
+    this.systemContactId = systemContactId;
   }
 
   public String getName() {
