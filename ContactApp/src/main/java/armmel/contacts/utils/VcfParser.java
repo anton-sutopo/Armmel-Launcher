@@ -9,6 +9,8 @@ import armmel.contacts.database.entity.ContactPhoto;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class VcfParser {
@@ -77,6 +79,18 @@ public class VcfParser {
 
           contact.getAddresses().add(new ContactAddress(address, type));
         }
+      } else if (startsWithProperty(line, "X-CREATED") && contact != null) {
+        String createdAt = getPropertyValue(line);
+        if (!createdAt.isEmpty()) {
+          contact.setCreatedAt(createdAt);
+        }
+      } else if (startsWithProperty(line, "REV")
+          && contact != null
+          && contact.getCreatedAt() == null) {
+        String createdAt = parseVCardDate(getPropertyValue(line));
+        if (createdAt != null) {
+          contact.setCreatedAt(createdAt);
+        }
       } else if (line.startsWith("PHOTO") && contact != null) {
         // Start reading base64 photo data
         int idx = line.indexOf("ENCODING=b");
@@ -111,5 +125,24 @@ public class VcfParser {
 
     reader.close();
     return contacts;
+  }
+
+  private static boolean startsWithProperty(String line, String property) {
+    return line.regionMatches(true, 0, property + ":", 0, property.length() + 1);
+  }
+
+  private static String getPropertyValue(String line) {
+    return line.substring(line.indexOf(':') + 1).trim();
+  }
+
+  private static String parseVCardDate(String value) {
+    SimpleDateFormat utcFormat = new SimpleDateFormat("yyyyMMdd'T'HHmmss'Z'", Locale.US);
+    utcFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+    SimpleDateFormat localFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
+    try {
+      return localFormat.format(utcFormat.parse(value));
+    } catch (ParseException ignored) {
+      return null;
+    }
   }
 }
