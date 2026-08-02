@@ -21,18 +21,27 @@ public class ContactAdapter extends BaseAdapter {
   private final List<Search> contacts;
   private final SearchService searchService;
   private final OnDeviceContactAction onDeviceContactAction;
+  private final OnContactClick onContactClick;
   private String keyword;
 
   public interface OnDeviceContactAction {
     void onDeviceContactAction(long contactId);
   }
 
+  public interface OnContactClick {
+    void onContactClick(long contactId);
+  }
+
   public ContactAdapter(
-      Context context, List<Search> contacts, OnDeviceContactAction onDeviceContactAction) {
+      Context context,
+      List<Search> contacts,
+      OnDeviceContactAction onDeviceContactAction,
+      OnContactClick onContactClick) {
     this.context = context;
     this.contacts = contacts;
     this.searchService = new SearchService(context);
     this.onDeviceContactAction = onDeviceContactAction;
+    this.onContactClick = onContactClick;
   }
 
   @Override
@@ -72,6 +81,7 @@ public class ContactAdapter extends BaseAdapter {
         context.getString(isOnDevice ? R.string.action_remove : R.string.action_add));
     deviceContactsButton.setOnClickListener(
         view -> onDeviceContactAction.onDeviceContactAction(contact.getContactId()));
+    convertView.setOnClickListener(view -> onContactClick.onContactClick(contact.getContactId()));
 
     return convertView;
   }

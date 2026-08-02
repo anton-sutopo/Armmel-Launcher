@@ -70,15 +70,9 @@ public class MainActivity extends Activity {
             contactId -> {
               pendingDeviceContactId = contactId;
               toggleDeviceContact();
-            });
+            },
+            this::openDetailActivity);
     contactNames.setAdapter(contactAdapter);
-    contactNames.setOnItemClickListener(
-        (parent, view, position, id) -> {
-          Search selectedContact = (Search) contactAdapter.getItem(position);
-          Intent intent = new Intent(MainActivity.this, ContactDetailActivity.class);
-          intent.putExtra("contact_id", selectedContact.getContactId()); // Pass contact ID
-          startActivity(intent);
-        });
     requestContactsPermission();
 
     fab = (ImageButton) findViewById(R.id.fab);
