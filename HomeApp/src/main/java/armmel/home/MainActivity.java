@@ -1,6 +1,5 @@
 package armmel.home;
 
-import android.Manifest;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -11,12 +10,16 @@ import android.content.pm.LauncherActivityInfo;
 import android.content.pm.LauncherApps;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.UserHandle;
 import android.os.UserManager;
 import android.view.View;
+import android.view.Window;
 import android.view.WindowInsets;
+import android.view.WindowManager;
 import android.widget.Toast;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -30,11 +33,7 @@ import java.util.Properties;
 
 public class MainActivity extends Activity {
 
-  public static int height;
-  public static final String CLEAR = "arm.home.clear";
-  public static final String ADD = "arm.home.add";
   protected ArrayList<ApplicationInfo> mApplications;
-  private static final String LOG_TAG = "Home";
   ViewPagerD view = null;
   protected final int appCount = GridLayout.numRows * GridLayout.numColumns;
   MyAdapter myAdapter = null;
@@ -58,6 +57,7 @@ public class MainActivity extends Activity {
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+    configureTransparentSystemBars();
     setContentView(R.layout.activity_main);
 
     View rootView = findViewById(R.id.root);
@@ -65,15 +65,17 @@ public class MainActivity extends Activity {
         new View.OnApplyWindowInsetsListener() {
           @Override
           public WindowInsets onApplyWindowInsets(View v, WindowInsets insets) {
-
-            // Get system bar insets
-            int statusBarHeight = insets.getInsets(WindowInsets.Type.statusBars()).top;
-            int navBarHeight = insets.getInsets(WindowInsets.Type.navigationBars()).bottom;
-
-            // Apply padding to root layout
+            int statusBarHeight;
+            int navBarHeight;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+              statusBarHeight = insets.getInsets(WindowInsets.Type.statusBars()).top;
+              navBarHeight = insets.getInsets(WindowInsets.Type.navigationBars()).bottom;
+            } else {
+              statusBarHeight = insets.getSystemWindowInsetTop();
+              navBarHeight = insets.getSystemWindowInsetBottom();
+            }
             v.setPadding(v.getPaddingLeft(), statusBarHeight, v.getPaddingRight(), navBarHeight);
-
-            return insets; // must return insets
+            return insets;
           }
         });
 
@@ -113,6 +115,21 @@ public class MainActivity extends Activity {
     registerReceiver(tm, timeFilter);
   }
 
+  private void configureTransparentSystemBars() {
+    Window window = getWindow();
+    window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+    window.setStatusBarColor(Color.TRANSPARENT);
+    window.setNavigationBarColor(Color.TRANSPARENT);
+    window.setStatusBarContrastEnforced(false);
+    window.setNavigationBarContrastEnforced(false);
+    window
+        .getDecorView()
+        .setSystemUiVisibility(
+            View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
+  }
+
 
 
   @Override
@@ -126,7 +143,6 @@ public class MainActivity extends Activity {
     super.onWindowFocusChanged(
         hasFocus); // To change body of generated methods, choose Tools | Templates.
 
-    height = view.getHeight() - view.getTop();
     if (myAdapter == null) {
       loadApplications(false);
     }
@@ -162,8 +178,7 @@ public class MainActivity extends Activity {
 
     // Load properties
     Properties p = Utils.loadProperties(this, "armel.properties");
-    String theme = p.getProperty("theme");
-    IconPack ipack = new IconPack((theme != null ? theme : ""), manager);
+    IconPack ipack = new IconPack(p.getProperty("theme", ""), manager);
 
     if (mApplications == null) {
       mApplications = new ArrayList<>();
@@ -207,7 +222,7 @@ public class MainActivity extends Activity {
         }
         if (!isShow && !showNo) continue;
 
-        ApplicationInfo application = new ApplicationInfo(this);
+        ApplicationInfo application = new ApplicationInfo();
         application.setIsShortcut(false);
         application.setPackageName(packageName);
 

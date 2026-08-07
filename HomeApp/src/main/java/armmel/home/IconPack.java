@@ -226,7 +226,8 @@ public class IconPack {
     // create a mutable mask bitmap with the same mask
     Bitmap scaledBitmap = defaultBitmap;
     if (defaultBitmap != null && (defaultBitmap.getWidth() > w || defaultBitmap.getHeight() > h))
-      Bitmap.createScaledBitmap(defaultBitmap, (int) (w * mFactor), (int) (h * mFactor), false);
+      scaledBitmap =
+          Bitmap.createScaledBitmap(defaultBitmap, (int) (w * mFactor), (int) (h * mFactor), false);
 
     if (mMaskImage != null) {
       // draw the scaled bitmap with mask

@@ -10,18 +10,16 @@ import java.util.ArrayList;
 public class ApplicationAdapter extends ArrayAdapter<ApplicationInfo> {
   private final MainActivity context;
   private final ArrayList<ApplicationInfo> mobileValues;
-  public final int startPos;
 
   private static class ViewHolder {
     CustomImageView iv;
     OutlineTextView textView;
   }
 
-  public ApplicationAdapter(MainActivity context, ArrayList<ApplicationInfo> apps, int startPos) {
+  public ApplicationAdapter(MainActivity context, ArrayList<ApplicationInfo> apps) {
     super(context, 0, apps);
     this.context = context;
     this.mobileValues = apps;
-    this.startPos = startPos;
   }
 
   //	}

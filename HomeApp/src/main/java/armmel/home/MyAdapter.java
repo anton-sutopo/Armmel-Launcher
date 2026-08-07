@@ -8,6 +8,7 @@ import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Process;
+import android.os.UserHandle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -39,17 +40,13 @@ public class MyAdapter extends PagerAdapter {
   }
 
   private ArrayList<ApplicationInfo> getArrayByPosition(int position) {
-    ArrayList<ApplicationInfo> result = new ArrayList<ApplicationInfo>();
-    int y = position * context.appCount;
-    int size = context.mApplications != null ? context.mApplications.size() : 0;
-    for (int i = 0; i < context.appCount; i++) {
-      if (i + y < size) {
-        result.add(context.mApplications.get(i + y));
-      } else {
-        break;
-      }
-    }
-    return result;
+    if (context.mApplications == null) return new ArrayList<>();
+
+    int start = position * context.appCount;
+    int end = Math.min(start + context.appCount, context.mApplications.size());
+    return start < end
+        ? new ArrayList<>(context.mApplications.subList(start, end))
+        : new ArrayList<>();
   }
 
   @Override
@@ -66,7 +63,7 @@ public class MyAdapter extends PagerAdapter {
       GridLayout gridView = (GridLayout) layout.findViewById(R.id.gridView1);
       gridView.setAdapter(
           new ApplicationAdapter(
-              context, getArrayByPosition(position - 1), (position - 1) * context.appCount));
+              context, getArrayByPosition(position - 1)));
       gridView.setOnItemDoubleClickListener(
           new DoubleClick.DoubleClickListener() {
             @Override
@@ -143,7 +140,8 @@ public class MyAdapter extends PagerAdapter {
             | ShortcutQuery.FLAG_MATCH_PINNED);
     sq.setPackage(app.getPackageName());
 
-    List<ShortcutInfo> shortcuts = launcherapps.getShortcuts(sq, Process.myUserHandle());
+    UserHandle user = app.getUserHandle() != null ? app.getUserHandle() : Process.myUserHandle();
+    List<ShortcutInfo> shortcuts = launcherapps.getShortcuts(sq, user);
     if (shortcuts == null || shortcuts.isEmpty()) {
       Toast.makeText(context, "No shortcuts found", Toast.LENGTH_SHORT).show();
       return;
@@ -167,7 +165,7 @@ public class MyAdapter extends PagerAdapter {
         (parent, view, position, id) -> {
           ShortcutInfo selected = shortcuts.get(position);
           launcherapps.startShortcut(
-              selected.getPackage(), selected.getId(), null, null, Process.myUserHandle());
+              selected.getPackage(), selected.getId(), null, null, user);
           popup.dismiss();
         });
 

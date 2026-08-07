@@ -61,30 +61,11 @@ class ApplicationInfo {
   private UserHandle userhandle;
   private ComponentName componentName;
 
-  /** When set to true, indicates that the icon has been resized. */
-  boolean filtered;
-
-  private final MainActivity m;
-
-  /**
-   * Creates the application intent based on a component name and various launch flags.
-   *
-   * @param className the class name of the component representing the intent
-   * @param launchFlags the launch flags
-   */
-  final void setIntent(Intent intent) {
-    intent = intent;
-  }
-
   final void setActivity(ComponentName className, int launchFlags) {
     intent = new Intent(Intent.ACTION_MAIN);
     intent.addCategory(Intent.CATEGORY_LAUNCHER);
     intent.setComponent(className);
     intent.setFlags(launchFlags);
-  }
-
-  public ApplicationInfo(MainActivity m) {
-    this.m = m;
   }
 
   @Override
