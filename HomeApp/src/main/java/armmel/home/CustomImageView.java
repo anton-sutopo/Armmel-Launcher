@@ -77,15 +77,10 @@ public class CustomImageView extends View {
   protected void onDraw(Canvas canvas) {
     super.onDraw(canvas); // To change body of generated methods, choose Tools | Templates.
     if (d != null) {
-      int width = 0;
-      if (d.getWidth() >= d.getHeight()) {
-        width = canvas.getWidth();
-      } else {
-        width = canvas.getHeight();
-      }
-
-      Rect dest =
-          new Rect((canvas.getWidth() - width) / 2, (canvas.getHeight() - width) / 2, width, width);
+      int size = Math.min(canvas.getWidth(), canvas.getHeight());
+      int left = (canvas.getWidth() - size) / 2;
+      int top = (canvas.getHeight() - size) / 2;
+      Rect dest = new Rect(left, top, left + size, top + size);
       canvas.drawBitmap(d, null, dest, paint);
     }
     if (clock) {
