@@ -21,12 +21,13 @@ final class DictionaryEngine {
     (byte) 'A', (byte) 'K', (byte) 'D', (byte) '1'
   };
   private static final int DICTIONARY_FORMAT_VERSION = 1;
+  private static volatile List<String> sCachedWords;
 
   private final List<String> mWords;
   private final SuggestionRankingRepository mSuggestionRankingRepository;
 
   DictionaryEngine(Context context, SuggestionRankingRepository suggestionRankingRepository) {
-    mWords = loadWords(context.getAssets());
+    mWords = getCachedWords(context.getAssets());
     mSuggestionRankingRepository = suggestionRankingRepository;
   }
 
@@ -101,6 +102,22 @@ final class DictionaryEngine {
     } catch (IOException exception) {
       Log.e(TAG, "Unable to load dictionary asset " + DICTIONARY_ASSET, exception);
       return Collections.emptyList();
+    }
+  }
+
+  private List<String> getCachedWords(AssetManager assetManager) {
+    List<String> cachedWords = sCachedWords;
+    if (cachedWords != null) {
+      return cachedWords;
+    }
+
+    synchronized (DictionaryEngine.class) {
+      cachedWords = sCachedWords;
+      if (cachedWords == null) {
+        cachedWords = Collections.unmodifiableList(loadWords(assetManager));
+        sCachedWords = cachedWords;
+      }
+      return cachedWords;
     }
   }
 

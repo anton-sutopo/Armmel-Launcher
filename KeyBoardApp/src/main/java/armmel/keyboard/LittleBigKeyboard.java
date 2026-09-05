@@ -36,6 +36,8 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /** Input method for a soft keyboard. Based on the android sample code: softkeyboard. */
 public class LittleBigKeyboard extends InputMethodService
@@ -151,8 +153,10 @@ public class LittleBigKeyboard extends InputMethodService
 
   private ModKeyboardView mInputView;
   private CandidateView mCandidateView;
-  private DictionaryEngine mDictionaryEngine;
+  private volatile DictionaryEngine mDictionaryEngine;
   private SuggestionRankingRepository mSuggestionRankingRepository;
+  private final ExecutorService mDictionaryLoader = Executors.newSingleThreadExecutor();
+  private boolean mDictionaryLoadScheduled;
 
   // Composing is only used for dead key accent combinations (maximum length 1)
   private char mDeadKeyComposing;
@@ -200,11 +204,13 @@ public class LittleBigKeyboard extends InputMethodService
       android.os.Debug.waitForDebugger();
       Log.d(TAG, "onCreate()");
     }
+    preloadDictionaryEngine();
   }
 
   @Override
   public void onDestroy() {
     mEmojiRankingHandler.removeCallbacks(mApplyEmojiRankingRunnable);
+    mDictionaryLoader.shutdownNow();
     super.onDestroy();
   }
 
@@ -763,7 +769,11 @@ public class LittleBigKeyboard extends InputMethodService
       return;
     }
 
-    ensureDictionaryEngine();
+    if (mDictionaryEngine == null) {
+      preloadDictionaryEngine();
+      showFallbackEmoji();
+      return;
+    }
     mDictionarySuggestions =
         mDictionaryEngine.getSuggestions(mComposingWord.toString(), MAX_DICTIONARY_SUGGESTIONS);
     if (mDictionarySuggestions.isEmpty()) {
@@ -805,10 +815,32 @@ public class LittleBigKeyboard extends InputMethodService
     clearDictionarySuggestions();
   }
 
-  private void ensureDictionaryEngine() {
-    if (mDictionaryEngine == null) {
-      mDictionaryEngine = new DictionaryEngine(this, getSuggestionRankingRepository());
+  private void preloadDictionaryEngine() {
+    if (mDictionaryEngine != null || mDictionaryLoadScheduled) {
+      return;
     }
+
+    mDictionaryLoadScheduled = true;
+    final SuggestionRankingRepository suggestionRankingRepository =
+        getSuggestionRankingRepository();
+    mDictionaryLoader.execute(
+        new Runnable() {
+          @Override
+          public void run() {
+            final DictionaryEngine dictionaryEngine =
+                new DictionaryEngine(getApplicationContext(), suggestionRankingRepository);
+            mEmojiRankingHandler.post(
+                new Runnable() {
+                  @Override
+                  public void run() {
+                    mDictionaryEngine = dictionaryEngine;
+                    if (mPredictionOn && mComposingWord.length() >= 2) {
+                      updateDictionarySuggestions();
+                    }
+                  }
+                });
+          }
+        });
   }
 
   private SuggestionRankingRepository getSuggestionRankingRepository() {
