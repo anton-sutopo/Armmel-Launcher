@@ -37,6 +37,7 @@ public class MainActivity extends Activity {
   ViewPagerD view = null;
   protected final int appCount = GridLayout.numRows * GridLayout.numColumns;
   MyAdapter myAdapter = null;
+  private boolean pagerAdapterAttached;
   protected LauncherApps launcherApps;
   private BroadcastReceiver br;
   private BroadcastReceiver tm;
@@ -146,8 +147,12 @@ public class MainActivity extends Activity {
     if (myAdapter == null) {
       loadApplications(false);
     }
-    view.setAdapter(myAdapter);
-    myAdapter.notifyDataSetChanged();
+    if (!pagerAdapterAttached) {
+      view.setAdapter(myAdapter);
+      pagerAdapterAttached = true;
+    } else if (view.getCurrentItem() != 0) {
+      view.setCurrentItem(0, false);
+    }
 
   }
 

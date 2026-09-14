@@ -29,10 +29,12 @@ public class DoubleClick implements View.OnClickListener {
             new Runnable() {
               @Override
               public void run() {
-                if (clicks >= 2) {
+                int clickCount = clicks;
+                clicks = 0;
+                if (clickCount >= 2) {
                   doc.onDoubleClick(parent, v, position);
                 }
-                if (clicks == 1) {
+                if (clickCount == 1) {
                   doc.onSingleClick(parent, v, position);
                 }
               }

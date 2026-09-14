@@ -87,11 +87,12 @@ public class MyAdapter extends PagerAdapter {
             public void onSingleClick(AdapterView<?> parent, View v, int position) {
               ApplicationInfo app = (ApplicationInfo) parent.getItemAtPosition(position);
               if (!app.isShortcut()) {
-                if (app.getUserHandle() != null) { // work profile
+                if (app.getUserHandle() != null
+                    && !app.getUserHandle().equals(Process.myUserHandle())) {
                   launcherapps.startMainActivity(
                       app.getComponentName(), app.getUserHandle(), null, null);
                 } else {
-                  context.startActivity(app.intent); // personal profile
+                  context.startActivity(app.intent);
                 }
               } else {
                 launcherapps.startShortcut(
