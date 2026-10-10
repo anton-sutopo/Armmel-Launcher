@@ -8,8 +8,8 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 
 public class GridLayout extends AdapterView<ApplicationAdapter> {
-  public static int numRows = 8;
-  public static int numColumns = 6;
+  public static int numRows = 7;
+  public static int numColumns = 5;
   private ApplicationAdapter adapter;
   private DoubleClick.DoubleClickListener doubleClickListener;
   private DoubleClick doubleClick;

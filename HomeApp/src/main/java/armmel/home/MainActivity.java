@@ -2,6 +2,7 @@ package armmel.home;
 
 import android.app.Activity;
 import android.content.BroadcastReceiver;
+import android.app.AlertDialog;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -20,16 +21,15 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowInsets;
 import android.view.WindowManager;
+import android.widget.CheckBox;
+import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.Toast;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Properties;
+import org.json.JSONException;
 
 public class MainActivity extends Activity {
 
@@ -45,15 +45,6 @@ public class MainActivity extends Activity {
   CustomImageView calendar;
 
   public MainActivity() {}
-
-  private static final int PICK_PROPERTIES_FILE = 101;
-
-  public void openFilePicker() {
-    Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-    intent.setType("*/*"); // or "text/plain"
-    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
-    startActivityForResult(intent, PICK_PROPERTIES_FILE);
-  }
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -182,8 +173,15 @@ public class MainActivity extends Activity {
     PackageManager manager = getPackageManager();
 
     // Load properties
-    Properties p = Utils.loadProperties(this, "armel.properties");
-    IconPack ipack = new IconPack(p.getProperty("theme", ""), manager);
+    LauncherConfig configuration;
+    try {
+      configuration = Utils.loadConfiguration(this);
+    } catch (IOException | JSONException e) {
+      Toast.makeText(this, "Invalid armel.json configuration", Toast.LENGTH_LONG).show();
+      return;
+    }
+    IconPack ipack = new IconPack(configuration.getTheme(), manager);
+    boolean configurationChanged = false;
 
     if (mApplications == null) {
       mApplications = new ArrayList<>();
@@ -205,38 +203,23 @@ public class MainActivity extends Activity {
             stripComponent(componentName.toString())
                 + ((user != null) ? "_" + user.hashCode() : "_personal");
 
-        String stat = p.getProperty(className);
-        boolean isShow = true;
-        String label = "";
-        String condition = "";
-        if (stat == null) {
-          p.put(className, "Yes");
-        } else {
-          String[] statPart = stat.split(";");
-          isShow = statPart[0].equalsIgnoreCase("Yes");
-          switch (statPart.length) {
-            case 2:
-              condition = statPart[1];
-              break;
-            case 3:
-              condition = statPart[1];
-              label = statPart[2];
-              break;
-            default:
-          }
+        LauncherConfig.App configuredApp = configuration.getApp(className);
+        if (!configuredApp.exists()) {
+          configuration.addDefaultApp(className);
+          configuredApp = configuration.getApp(className);
+          configurationChanged = true;
         }
+        boolean isShow = configuredApp.isVisible();
+        String label = configuredApp.getLabel();
+        String condition = configuredApp.getAction();
         if (!isShow && !showNo) continue;
 
         ApplicationInfo application = new ApplicationInfo();
         application.setIsShortcut(false);
         application.setPackageName(packageName);
+        application.setConfigurationId(className);
 
-        if (packageName.equalsIgnoreCase("com.android.settings")
-            && Utils.isStringEmpty(condition)) {
-          application.setCondition(ApplicationInfo.PROPERTIES);
-        } else {
-          application.setCondition(condition);
-        }
+        application.setCondition(condition);
         application.setComponentName(componentName);
         application.setUserHandle(user);
         application.title = !label.isEmpty() ? label : info.getLabel();
@@ -264,8 +247,97 @@ public class MainActivity extends Activity {
     // Sort applications
     mApplications.sort((a, b) -> ((String) a.title).compareToIgnoreCase((String) b.title));
 
-    // Save updated properties
-    Utils.writeProperties(this, p, "armel.properties", "showAll Reload");
+    if (configurationChanged && !Utils.writeConfiguration(this, configuration)) {
+      Toast.makeText(this, "Failed to save launcher settings", Toast.LENGTH_SHORT).show();
+    }
+  }
+
+  void reloadConfiguration() {
+    LauncherConfig configuration;
+    try {
+      configuration = Utils.loadConfiguration(this);
+    } catch (IOException | JSONException e) {
+      Toast.makeText(this, "Invalid armel.json configuration", Toast.LENGTH_LONG).show();
+      return;
+    }
+    configuration.removeDefaultApps();
+    if (!Utils.writeConfiguration(this, configuration)) {
+      Toast.makeText(this, "Failed to reset launcher settings", Toast.LENGTH_SHORT).show();
+      return;
+    }
+    IconPack.clearGeneratedIcons(this);
+    loadApplications(false, false);
+  }
+
+  void showApplicationMenu(ApplicationInfo application) {
+    String[] actions =
+        application.isShortcut() || application.isSystem
+            ? new String[] {"Edit properties"}
+            : new String[] {"Edit properties", "Uninstall"};
+    new AlertDialog.Builder(this)
+        .setTitle(application.title)
+        .setItems(
+            actions,
+            (dialog, which) -> {
+              if (which == 0) {
+                showApplicationEditor(application);
+              } else {
+                Uri packageUri = Uri.parse("package:" + application.getPackageName());
+                startActivity(new Intent(Intent.ACTION_DELETE, packageUri));
+              }
+            })
+        .show();
+  }
+
+  void showApplicationEditor(ApplicationInfo application) {
+    LauncherConfig configuration;
+    try {
+      configuration = Utils.loadConfiguration(this);
+    } catch (IOException | JSONException e) {
+      Toast.makeText(this, "Invalid armel.json configuration", Toast.LENGTH_LONG).show();
+      return;
+    }
+    LauncherConfig.App configuredApp = configuration.editApp(application.getConfigurationId());
+    int padding = (int) (16 * getResources().getDisplayMetrics().density);
+    LinearLayout fields = new LinearLayout(this);
+    fields.setOrientation(LinearLayout.VERTICAL);
+    fields.setPadding(padding, 0, padding, 0);
+
+    CheckBox visible = new CheckBox(this);
+    visible.setText("Visible in launcher");
+    visible.setChecked(configuredApp.isVisible());
+    fields.addView(visible);
+
+    EditText label = new EditText(this);
+    label.setHint("Custom label");
+    label.setSingleLine(true);
+    label.setText(configuredApp.getLabel());
+    fields.addView(label);
+
+    EditText action = new EditText(this);
+    action.setHint("Action (for example: calendar or clock)");
+    action.setSingleLine(true);
+    action.setText(configuredApp.getAction());
+    fields.addView(action);
+
+    new AlertDialog.Builder(this)
+        .setTitle(application.title)
+        .setView(fields)
+        .setNegativeButton(android.R.string.cancel, null)
+        .setPositiveButton(
+            android.R.string.ok,
+            (dialog, which) -> {
+              configuredApp.setVisible(visible.isChecked());
+              configuredApp.setLabel(label.getText().toString().trim());
+              configuredApp.setAction(action.getText().toString().trim());
+              if (!Utils.writeConfiguration(this, configuration)) {
+                Toast.makeText(this, "Failed to save launcher settings", Toast.LENGTH_SHORT).show();
+                return;
+              }
+              loadApplications(false);
+              myAdapter.notifyDataSetChanged();
+            })
+        .show();
   }
 
   @Override
@@ -281,39 +353,4 @@ public class MainActivity extends Activity {
 
   }
 
-  private void copyFileToAppDir(Uri sourceUri) {
-    File destFile = new File(getExternalFilesDir("/"), "armel.properties");
-
-    try (InputStream in = getContentResolver().openInputStream(sourceUri);
-        OutputStream out = new FileOutputStream(destFile)) {
-
-      byte[] buffer = new byte[4096];
-      int read;
-      while ((read = in.read(buffer)) != -1) {
-        out.write(buffer, 0, read);
-      }
-
-      Toast.makeText(this, "File uploaded successfully!", Toast.LENGTH_SHORT).show();
-      loadApplications(false);
-    } catch (IOException e) {
-      e.printStackTrace();
-      Toast.makeText(this, "Failed to upload file", Toast.LENGTH_SHORT).show();
-    }
-  }
-
-  @Override
-  protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-    super.onActivityResult(requestCode, resultCode, data);
-    if (requestCode == PICK_PROPERTIES_FILE && resultCode == RESULT_OK) {
-      Uri uri = data.getData();
-      if (uri != null) {
-        try {
-          getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        } catch (Exception e) {
-          // some providers don't allow persistable permissions; ignore
-        }
-        copyFileToAppDir(uri);
-      }
-    }
-  }
 }

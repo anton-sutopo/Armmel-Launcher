@@ -34,7 +34,6 @@ class ApplicationInfo {
   public static final String CLOCK = "clock";
   public static final String SHOWALL = "showall";
   public static final String RELOAD = "reload";
-  public static final String PROPERTIES = "properties";
 
   /** The application name. */
   CharSequence title;
@@ -50,7 +49,6 @@ class ApplicationInfo {
   boolean isSystem = false;
   boolean isShowAll = false;
   boolean isReload = false;
-  boolean isProperties = false;
   private boolean isShortcut = false;
   private boolean calendar = false;
   private boolean clock = false;
@@ -58,6 +56,7 @@ class ApplicationInfo {
   private ShortcutInfo shortcutInfo;
   private ArrayList<ApplicationInfo> childList = new ArrayList<>();
   private String packageName;
+  private String configurationId;
   private UserHandle userhandle;
   private ComponentName componentName;
 
@@ -118,7 +117,6 @@ class ApplicationInfo {
     this.isShowAll = condition.equalsIgnoreCase(SHOWALL);
     this.isReload = condition.equalsIgnoreCase(RELOAD);
     this.clock = condition.equalsIgnoreCase(CLOCK);
-    this.isProperties = condition.equalsIgnoreCase(PROPERTIES);
   }
 
   public ComponentName getComponentName() {
@@ -175,5 +173,13 @@ class ApplicationInfo {
 
   public String getPackageName() {
     return this.packageName;
+  }
+
+  public void setConfigurationId(String configurationId) {
+    this.configurationId = configurationId;
+  }
+
+  public String getConfigurationId() {
+    return configurationId;
   }
 }

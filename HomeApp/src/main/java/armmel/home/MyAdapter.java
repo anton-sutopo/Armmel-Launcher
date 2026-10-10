@@ -1,15 +1,12 @@
 package armmel.home;
 
-import android.content.Intent;
 import android.content.pm.LauncherApps;
 import android.content.pm.LauncherApps.ShortcutQuery;
 import android.content.pm.ShortcutInfo;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
-import android.net.Uri;
 import android.os.Process;
 import android.os.UserHandle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,7 +18,6 @@ import android.widget.Toast;
 import armmel.library.PagerAdapter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 
 public class MyAdapter extends PagerAdapter {
 
@@ -69,15 +65,10 @@ public class MyAdapter extends PagerAdapter {
             @Override
             public void onDoubleClick(AdapterView<?> parent, View v, int position) {
               ApplicationInfo app = (ApplicationInfo) parent.getItemAtPosition(position);
-              if (app.isProperties) {
-                context.openFilePicker();
-              } else if (app.isShowAll) {
+              if (app.isShowAll) {
                 context.loadApplications(false, true);
               } else if (app.isReload) {
-                Properties p = Utils.loadProperties(context, "armel.properties");
-                p = Utils.cleanPropertiesHasValue(p, "Yes");
-                Utils.writeProperties(context, p, "armel.properties", "showall reload");
-                context.loadApplications(false, false);
+                context.reloadConfiguration();
               } else {
                 openShortcut(app, v);
               }
@@ -109,16 +100,7 @@ public class MyAdapter extends PagerAdapter {
             public boolean onItemLongClick(
                 AdapterView<?> parent, View view, int position, long id) {
               ApplicationInfo app = (ApplicationInfo) parent.getItemAtPosition(position);
-              if (!app.isSystem) {
-                if (!app.isShortcut()) {
-                  Uri packUri = Uri.parse("package:" + app.intent.getComponent().getPackageName());
-                  Intent uninstallIntent = new Intent(Intent.ACTION_DELETE, packUri);
-                  context.startActivity(uninstallIntent);
-                }
-              } else {
-                Log.i("home1", app.intent.getComponent().getClassName());
-                Toast.makeText(context, app.title + " is system app.", Toast.LENGTH_LONG).show();
-              }
+              context.showApplicationMenu(app);
               return true;
               // generated methods, choose Tools | Templates.
             }

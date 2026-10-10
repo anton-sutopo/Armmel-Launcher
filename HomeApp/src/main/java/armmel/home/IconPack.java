@@ -24,7 +24,7 @@ import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserFactory;
 
 public class IconPack {
-  private static String folderPath = "arm";
+  private static final String CACHE_FOLDER = "arm";
   private String iconPackage = "";
   private PackageManager pm = null;
   private Resources iconPackRes = null;
@@ -45,9 +45,14 @@ public class IconPack {
     } catch (PackageManager.NameNotFoundException pn) {
       pn.printStackTrace();
     }
+
     if (this.iconPackRes != null) {
       loadNeededResource();
     }
+  }
+
+  public static void clearGeneratedIcons(Context context) {
+    Utils.clearDirectory(context, CACHE_FOLDER);
   }
 
   private XmlPullParser loadXMLAppFilter() {
@@ -146,7 +151,7 @@ public class IconPack {
 
   public Bitmap getBitmap(Context c, String packageName) {
     String photoPath =
-        Utils.getRoot(c) + File.separator + folderPath + File.separator + packageName + ".png";
+        Utils.getRoot(c) + File.separator + CACHE_FOLDER + File.separator + packageName + ".png";
     if (new File(photoPath).exists()) {
       BitmapFactory.Options options = new BitmapFactory.Options();
       options.inPreferredConfig = Bitmap.Config.ARGB_8888;
@@ -262,7 +267,7 @@ public class IconPack {
 
   public Bitmap getIcon(
       Context c, Resources resources, String packageName, String componentName, Drawable icon) {
-    String photoPath = Utils.getRoot(c) + File.separator + folderPath;
+    String photoPath = Utils.getRoot(c) + File.separator + CACHE_FOLDER;
     if (!new File(photoPath).exists()) {
       new File(photoPath).mkdir();
     }
